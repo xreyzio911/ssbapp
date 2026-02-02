@@ -22,4 +22,3 @@ export function ReissuePasswordButton({ assignmentId }: { assignmentId: string }
     </form>
   );
 }
-}
