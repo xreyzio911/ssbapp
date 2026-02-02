@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ssb
+      POSTGRES_PASSWORD: ssb_password
+      POSTGRES_DB: ssb_portal
+    ports:
+      - "5432:5432"
+    volumes:
+      - ssb-data:/var/lib/postgresql/data
+
+volumes:
+  ssb-data:

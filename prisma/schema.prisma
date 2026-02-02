@@ -1,0 +1,172 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  HR
+  EMPLOYEE
+}
+
+enum DocType {
+  KTP
+  KK
+  CV
+  IJAZAH
+  TRANSKRIP
+  PAKLARING
+  SERTIFIKAT
+  FOTO
+}
+
+enum HrFileType {
+  GENERAL
+  AGREEMENT
+}
+
+enum AssignmentStatus {
+  PENDING
+  SIGNED
+}
+
+model User {
+  id           String   @id @default(uuid())
+  role         UserRole
+  email        String   @unique
+  passwordHash String
+  name         String
+  nik          String?
+  phone        String?
+  address      String?
+  dob          DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sessions         Session[]
+  docStatuses      EmployeeDocStatus[]
+  documentVersions DocumentVersion[]
+  hrFilesUploaded  HrFile[]           @relation("HrUploader")
+  invitationsSent  Invitation[]       @relation("InvitedBy")
+  assignments      HrFileAssignment[]
+  auditLogs        AuditLog[]          @relation("Actor")
+  passwordResets   PasswordReset[]
+}
+
+model Session {
+  id         String   @id @default(uuid())
+  userId     String
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Invitation {
+  id          String   @id @default(uuid())
+  email       String
+  name        String
+  tokenHash   String   @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+  invitedById String
+  createdAt   DateTime @default(now())
+
+  invitedBy User @relation("InvitedBy", fields: [invitedById], references: [id], onDelete: Cascade)
+}
+
+model PasswordReset {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model EmployeeDocStatus {
+  id          String   @id @default(uuid())
+  userId      String
+  docType     DocType
+  needsUpdate Boolean  @default(false)
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, docType])
+}
+
+model DocumentVersion {
+  id               String   @id @default(uuid())
+  userId           String
+  docType          DocType
+  originalFilename String
+  storedFilename   String
+  storagePath      String
+  mimeType         String
+  size             Int
+  uploadedByRole   UserRole
+  createdAt        DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model HrFile {
+  id                  String     @id @default(uuid())
+  fileType            HrFileType
+  title               String
+  description         String?
+  originalFilename    String
+  storedFilename      String
+  storagePath         String
+  mimeType            String
+  size                Int
+  fileIv              String
+  fileKeyEncMaster    String
+  fileKeyEncMasterIv  String
+  uploadedById        String
+  createdAt           DateTime   @default(now())
+
+  uploadedBy  User              @relation("HrUploader", fields: [uploadedById], references: [id], onDelete: Cascade)
+  assignments HrFileAssignment[]
+}
+
+model HrFileAssignment {
+  id                     String            @id @default(uuid())
+  hrFileId               String
+  employeeId             String
+  status                 AssignmentStatus  @default(PENDING)
+  assignedAt             DateTime          @default(now())
+  passwordHash           String
+  passwordKdfSalt        String
+  passwordKdfIterations  Int
+  passwordKdfIv          String
+  fileKeyEncPassword     String
+  lastPasswordIssuedAt   DateTime          @default(now())
+  signedAt               DateTime?
+  signedFilePath         String?
+  signedFileIv           String?
+  signedStoredFilename   String?
+
+  hrFile   HrFile @relation(fields: [hrFileId], references: [id], onDelete: Cascade)
+  employee User   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([hrFileId, employeeId])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String?
+  actorRole  UserRole?
+  action     String
+  targetType String
+  targetId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation("Actor", fields: [actorId], references: [id], onDelete: SetNull)
+}
