@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { UserRole } from "@prisma/client";
 
 export async function GET(
-  _req: Request,
+  _req: NextRequest,
   context: { params: Promise<{ assignmentId: string }> }
 ) {
   const { assignmentId } = await context.params;
