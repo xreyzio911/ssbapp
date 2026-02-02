@@ -34,8 +34,5 @@ export function DocStatusToggle({ employeeId, docType, needsUpdate }: Props) {
       ) : null}
     </form>
   );
-<<<<<<< HEAD
 }
-=======
 }
->>>>>>> b330d54 (Fix route handler params for Next 16)

@@ -70,8 +70,5 @@ export function EmployeeProfileEditor(props: Props) {
       </div>
     </form>
   );
-<<<<<<< HEAD
 }
-=======
 }
->>>>>>> b330d54 (Fix route handler params for Next 16)

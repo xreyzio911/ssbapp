@@ -8,25 +8,16 @@ import { logAudit } from "@/lib/audit";
 
 export async function GET(
   req: Request,
-<<<<<<< HEAD
-  { params }: { params: { assignmentId: string } }
-) {
-=======
   context: { params: Promise<{ assignmentId: string }> }
 ) {
   const { assignmentId } = await context.params;
->>>>>>> b330d54 (Fix route handler params for Next 16)
   const user = await getSessionUser();
   if (!user || user.role !== UserRole.HR) {
     return NextResponse.json({ error: "Tidak diizinkan." }, { status: 401 });
   }
 
   const assignment = await prisma.hrFileAssignment.findUnique({
-<<<<<<< HEAD
-    where: { id: params.assignmentId },
-=======
     where: { id: assignmentId },
->>>>>>> b330d54 (Fix route handler params for Next 16)
     include: { hrFile: true },
   });
   if (!assignment) {
@@ -46,9 +37,7 @@ export async function GET(
   );
 
   const filePath = signed ? assignment.signedFilePath! : assignment.hrFile.storagePath;
-  const iv = signed
-    ? assignment.signedFileIv!
-    : assignment.hrFile.fileIv;
+  const iv = signed ? assignment.signedFileIv! : assignment.hrFile.fileIv;
   const encrypted = await readFileBuffer(filePath);
   const plaintext = decryptAesGcm(
     encrypted,
