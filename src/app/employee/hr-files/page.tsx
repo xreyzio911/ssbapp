@@ -2,7 +2,7 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { Card } from "@/components/ui/card";
 import { HrFileCard } from "./HrFileCard";
-import { UserRole } from "@prisma/client";
+import { UserRole } from "@/lib/enums";
 
 export default async function EmployeeHrFilesPage() {
   const user = await requireRole(UserRole.EMPLOYEE);
@@ -49,3 +49,4 @@ export default async function EmployeeHrFilesPage() {
     </Card>
   );
 }
+

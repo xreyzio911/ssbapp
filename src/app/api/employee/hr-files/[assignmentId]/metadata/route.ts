@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { UserRole } from "@prisma/client";
+import { UserRole } from "@/lib/enums";
 
 export async function GET(
   _req: NextRequest,
@@ -29,3 +29,4 @@ export async function GET(
     passwordKdfIv: assignment.passwordKdfIv,
   });
 }
+

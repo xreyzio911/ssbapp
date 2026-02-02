@@ -2,7 +2,7 @@
 
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { UserRole, DocType } from "@prisma/client";
+import { UserRole, DocType } from "@/lib/enums";
 import { z } from "zod";
 import {
   decryptFileKeyWithMaster,
@@ -143,3 +143,4 @@ export async function reissuePasswordAction(
 
   return { message: "Kata sandi baru sudah dikirim." };
 }
+

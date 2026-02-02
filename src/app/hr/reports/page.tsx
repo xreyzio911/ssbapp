@@ -1,5 +1,5 @@
 import { requireRole } from "@/lib/auth";
-import { UserRole } from "@prisma/client";
+import { UserRole } from "@/lib/enums";
 import { Card } from "@/components/ui/card";
 import Link from "next/link";
 
@@ -22,3 +22,4 @@ export default async function ReportsPage() {
     </Card>
   );
 }
+

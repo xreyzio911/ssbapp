@@ -1,5 +1,5 @@
 import { prisma } from "./db";
-import { UserRole } from "@prisma/client";
+import { UserRole } from "@/lib/enums";
 
 type AuditInput = {
   actorId?: string;
@@ -22,3 +22,4 @@ export async function logAudit(entry: AuditInput) {
     },
   });
 }
+

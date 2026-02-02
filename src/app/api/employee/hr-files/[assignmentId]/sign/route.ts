@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { UserRole } from "@prisma/client";
+import { UserRole } from "@/lib/enums";
 import { decryptFileKeyWithMaster, encryptAesGcm } from "@/lib/crypto";
 import { saveFile } from "@/lib/storage";
 import { logAudit } from "@/lib/audit";
@@ -73,3 +73,4 @@ export async function POST(
 
   return NextResponse.json({ ok: true });
 }
+

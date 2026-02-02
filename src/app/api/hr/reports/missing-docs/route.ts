@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { UserRole } from "@prisma/client";
+import { UserRole } from "@/lib/enums";
 import { DOC_TYPES, DOC_TYPE_LABELS } from "@/lib/constants";
 
 export async function GET() {
@@ -49,3 +49,4 @@ export async function GET() {
     },
   });
 }
+

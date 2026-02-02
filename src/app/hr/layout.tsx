@@ -1,5 +1,5 @@
 import { requireRole } from "@/lib/auth";
-import { UserRole } from "@prisma/client";
+import { UserRole } from "@/lib/enums";
 import Link from "next/link";
 import { RoleNav } from "@/components/nav/RoleNav";
 
@@ -39,3 +39,4 @@ export default async function HrLayout({
     </div>
   );
 }
+

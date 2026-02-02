@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
-import { UserRole } from "@prisma/client";
+import { UserRole } from "@/lib/enums";
 import { generateToken, hashToken } from "@/lib/crypto";
 import { sendEmail } from "@/lib/email";
 import { z } from "zod";
@@ -65,3 +65,4 @@ export async function inviteEmployeeAction(
 
   return { message: "Undangan berhasil dikirim." };
 }
+

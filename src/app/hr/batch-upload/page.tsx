@@ -1,6 +1,6 @@
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { UserRole } from "@prisma/client";
+import { UserRole } from "@/lib/enums";
 import { Card } from "@/components/ui/card";
 import { BatchUploadForm } from "./BatchUploadForm";
 
@@ -26,3 +26,4 @@ export default async function BatchUploadPage() {
     </Card>
   );
 }
+

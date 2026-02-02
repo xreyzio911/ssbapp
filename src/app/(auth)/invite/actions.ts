@@ -6,7 +6,7 @@ import { hashPassword } from "@/lib/password";
 import { createSession } from "@/lib/auth";
 import { z } from "zod";
 import { redirect } from "next/navigation";
-import { UserRole } from "@prisma/client";
+import { UserRole } from "@/lib/enums";
 
 const schema = z.object({
   token: z.string().min(10),
@@ -76,3 +76,4 @@ export async function acceptInviteAction(
   await createSession(user.id);
   redirect("/employee");
 }
+

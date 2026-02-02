@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
-import { DocType, UserRole } from "@prisma/client";
+import { DocType, UserRole } from "@/lib/enums";
 import { hasRole } from "@/lib/guards";
 import { buildEmployeeStoredFilename } from "@/lib/filename";
 import { saveFile } from "@/lib/storage";
@@ -71,3 +71,4 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ ok: true });
 }
+

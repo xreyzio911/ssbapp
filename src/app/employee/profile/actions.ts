@@ -2,7 +2,7 @@
 
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { UserRole } from "@prisma/client";
+import { UserRole } from "@/lib/enums";
 import { z } from "zod";
 
 const schema = z.object({
@@ -41,3 +41,4 @@ export async function updateProfileAction(
 
   return { message: "Profil berhasil diperbarui." };
 }
+

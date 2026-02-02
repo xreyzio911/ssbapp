@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "./db";
 import { generateToken, hashToken } from "./crypto";
-import { UserRole } from "@prisma/client";
+import { UserRole } from "@/lib/enums";
 
 const SESSION_COOKIE_NAME = "ssb_session";
 const SESSION_TTL_DAYS = 7;
@@ -72,3 +72,4 @@ export async function requireRole(role: UserRole) {
   }
   return user;
 }
+

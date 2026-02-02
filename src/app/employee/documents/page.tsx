@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { DOC_TYPES } from "@/lib/constants";
 import { Card } from "@/components/ui/card";
 import { DocumentUploadCard } from "./DocumentUploadCard";
-import { UserRole } from "@prisma/client";
+import { UserRole } from "@/lib/enums";
 
 export default async function EmployeeDocumentsPage() {
   const user = await requireRole(UserRole.EMPLOYEE);
@@ -59,3 +59,4 @@ export default async function EmployeeDocumentsPage() {
     </Card>
   );
 }
+

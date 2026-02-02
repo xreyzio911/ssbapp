@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { EmployeeProfileEditor } from "./EmployeeProfileEditor";
 import { DocStatusToggle } from "./DocStatusToggle";
 import { ReissuePasswordButton } from "./ReissuePasswordButton";
-import { UserRole } from "@prisma/client";
+import { UserRole } from "@/lib/enums";
 import Link from "next/link";
 
 export default async function EmployeeDetailPage({
@@ -200,3 +200,4 @@ export default async function EmployeeDetailPage({
     </div>
   );
 }
+
