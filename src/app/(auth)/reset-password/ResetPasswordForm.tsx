@@ -26,4 +26,8 @@ export function ResetPasswordForm({ token }: { token: string }) {
     </form>
   );
 }
+<<<<<<< HEAD
 
+=======
+
+>>>>>>> b330d54 (Fix route handler params for Next 16)
