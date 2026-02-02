@@ -25,7 +25,11 @@ type MetaResponse = {
   passwordKdfIv: string;
 };
 
-async function deriveKey(password: string, salt: Uint8Array, iterations: number) {
+async function deriveKey(
+  password: string,
+  salt: Uint8Array<ArrayBuffer>,
+  iterations: number
+) {
   const enc = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
     "raw",
@@ -48,10 +52,11 @@ async function deriveKey(password: string, salt: Uint8Array, iterations: number)
   );
 }
 
-function base64ToBytes(input: string) {
+function base64ToBytes(input: string): Uint8Array<ArrayBuffer> {
   const binary = atob(input);
   const len = binary.length;
-  const bytes = new Uint8Array(len);
+  const buffer = new ArrayBuffer(len);
+  const bytes = new Uint8Array(buffer) as Uint8Array<ArrayBuffer>;
   for (let i = 0; i < len; i += 1) {
     bytes[i] = binary.charCodeAt(i);
   }
@@ -235,7 +240,7 @@ export function HrFileCard({ assignment }: { assignment: Assignment }) {
         font,
         color: rgb(0.12, 0.27, 0.24),
       });
-      const signedBytes = await pdfDoc.save();
+      const signedBytes = (await pdfDoc.save()) as Uint8Array<ArrayBuffer>;
 
       const formData = new FormData();
       formData.append("signedPdf", new Blob([signedBytes], { type: "application/pdf" }), "signed.pdf");

@@ -1,8 +1,9 @@
 import { UserRole } from "@/lib/enums";
 
-type SessionUser = { role: UserRole } | null;
-
-export function hasRole(user: SessionUser, role: UserRole) {
+export function hasRole<T extends { role: UserRole }>(
+  user: T | null,
+  role: UserRole
+): user is T {
   return !!user && user.role === role;
 }
 
