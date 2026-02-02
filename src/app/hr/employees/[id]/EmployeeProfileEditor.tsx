@@ -71,4 +71,3 @@ export function EmployeeProfileEditor(props: Props) {
     </form>
   );
 }
-}

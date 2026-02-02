@@ -35,4 +35,3 @@ export function DocStatusToggle({ employeeId, docType, needsUpdate }: Props) {
     </form>
   );
 }
-}
