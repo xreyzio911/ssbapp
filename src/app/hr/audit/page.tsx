@@ -29,7 +29,13 @@ export default async function AuditPage() {
         Aktivitas terbaru (100 entri terakhir).
       </p>
       <div className="mt-4 space-y-2 text-sm">
-        {logs.map((log) => (
+        {logs.map(
+          (log: {
+            id: string;
+            action: string;
+            createdAt: Date;
+            actor?: { name: string | null } | null;
+          }) => (
           <div
             key={log.id}
             className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#1E453E]/10 bg-white px-4 py-3"

@@ -19,12 +19,17 @@ export default async function EmployeeDocumentsPage() {
   ]);
 
   const latestByType = new Map<string, Date>();
-  versions.forEach((version) => {
+  versions.forEach((version: { docType: string; createdAt: Date }) => {
     if (!latestByType.has(version.docType)) {
       latestByType.set(version.docType, version.createdAt);
     }
   });
-  const statusByType = new Map(statuses.map((s) => [s.docType, s.needsUpdate]));
+  const statusByType = new Map(
+    statuses.map((s: { docType: string; needsUpdate: boolean }) => [
+      s.docType,
+      s.needsUpdate,
+    ])
+  );
 
   return (
     <Card>

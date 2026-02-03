@@ -22,15 +22,24 @@ export default async function EmployeeDashboard() {
   ]);
 
   const latestByType = new Map<string, Date>();
-  versions.forEach((version) => {
+  versions.forEach((version: { docType: string; createdAt: Date }) => {
     if (!latestByType.has(version.docType)) {
       latestByType.set(version.docType, version.createdAt);
     }
   });
-  const statusByType = new Map(statuses.map((s) => [s.docType, s.needsUpdate]));
+  const statusByType = new Map(
+    statuses.map((s: { docType: string; needsUpdate: boolean }) => [
+      s.docType,
+      s.needsUpdate,
+    ])
+  );
 
-  const pending = assignments.filter((a) => a.status === "PENDING").length;
-  const signed = assignments.filter((a) => a.status === "SIGNED").length;
+  const pending = assignments.filter(
+    (a: { status: string }) => a.status === "PENDING"
+  ).length;
+  const signed = assignments.filter(
+    (a: { status: string }) => a.status === "SIGNED"
+  ).length;
 
   return (
     <div className="space-y-6">

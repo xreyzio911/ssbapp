@@ -29,7 +29,19 @@ export default async function EmployeeHrFilesPage() {
         </p>
       ) : (
         <div className="space-y-4">
-          {assignments.map((assignment) => (
+          {assignments.map(
+            (assignment: {
+              id: string;
+              status: "PENDING" | "SIGNED";
+              assignedAt: Date;
+              signedAt: Date | null;
+              hrFile: {
+                fileType: "GENERAL" | "AGREEMENT";
+                title: string;
+                mimeType: string;
+                size: number;
+              };
+            }) => (
             <HrFileCard
               key={assignment.id}
               assignment={{

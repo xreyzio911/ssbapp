@@ -41,9 +41,16 @@ export default async function EmployeeDetailPage({
     }),
   ]);
 
-  const statusByType = new Map(statuses.map((s) => [s.docType, s.needsUpdate]));
+  const statusByType = new Map(
+    statuses.map((s: { docType: string; needsUpdate: boolean }) => [
+      s.docType,
+      s.needsUpdate,
+    ])
+  );
   const versionsByType = DOC_TYPES.reduce((acc, doc) => {
-    acc[doc.type] = versions.filter((v) => v.docType === doc.type);
+    acc[doc.type] = versions.filter(
+      (v: { docType: string }) => v.docType === doc.type
+    );
     return acc;
   }, {} as Record<string, typeof versions>);
 
@@ -112,7 +119,12 @@ export default async function EmployeeDetailPage({
                 </div>
                 {docVersions.length > 0 ? (
                   <div className="mt-3 space-y-2">
-                    {docVersions.map((version) => (
+                    {docVersions.map(
+                      (version: {
+                        id: string;
+                        originalFilename: string;
+                        createdAt: Date;
+                      }) => (
                       <div
                         key={version.id}
                         className="flex flex-wrap items-center justify-between gap-2 text-xs text-[#6c6f6e]"
@@ -147,7 +159,14 @@ export default async function EmployeeDetailPage({
           </p>
         ) : (
           <div className="mt-4 space-y-4">
-            {assignments.map((assignment) => (
+            {assignments.map(
+              (assignment: {
+                id: string;
+                status: string;
+                assignedAt: Date;
+                signedFilePath: string | null;
+                hrFile: { title: string; fileType: string };
+              }) => (
               <div
                 key={assignment.id}
                 className="rounded-2xl border border-[#1E453E]/10 bg-white px-4 py-4"

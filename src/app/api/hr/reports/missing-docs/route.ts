@@ -28,7 +28,7 @@ export async function GET() {
 
   const rows = [
     ["Nama", "Email", "DokumenBelumLengkap"].join(","),
-    ...employees.map((emp) => {
+    ...employees.map((emp: { id: string; name: string; email: string | null }) => {
       const existing = present.get(emp.id) ?? new Set<string>();
       const missing = DOC_TYPES.filter((doc) => !existing.has(doc.type)).map(
         (doc) => DOC_TYPE_LABELS[doc.type]
