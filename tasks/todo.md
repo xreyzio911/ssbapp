@@ -5,6 +5,7 @@
 - [x] Fix the implicit `any` in `src/app/api/hr/reports/missing-docs/route.ts` (verify: `npm test` passes, `npm run build` passes).
 - [x] Add explicit callback types in server components that iterate Prisma results (verify: `npm test` passes, `npm run build` passes).
 - [x] Replace status map construction in server pages to avoid `{}` inference (verify: `npm test` passes, `npm run build` passes).
+- [x] Ensure Prisma client is generated during install for Vercel builds (verify: `npm run build` passes, Vercel build runs `postinstall`).
 
 # Review
 - Added `tests/typecheck.test.ts` to run `tsc --noEmit` during `npm test`.
@@ -16,3 +17,5 @@
 - Re-verified with `npm test` and `npm run build`.
 - Replaced `new Map(statuses.map(...))` with explicit `Map` + `forEach` to keep boolean types stable in server pages.
 - Re-verified with `npm test` and `npm run build`.
+- Added `postinstall` script to run `prisma generate` so Vercel has generated client types.
+- Re-verified with `npm run build`.
