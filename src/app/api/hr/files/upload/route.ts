@@ -168,8 +168,6 @@ export async function POST(req: Request) {
         html: `
         <p>Halo ${employee.name},</p>
         <p>Anda menerima dokumen baru: <strong>${title}</strong>.</p>
-        <p>Kata sandi dokumen:</p>
-        <p><strong>${password}</strong></p>
         <p>Masuk ke portal untuk membuka dokumen.</p>
       `,
       });
@@ -379,8 +377,6 @@ export async function POST(req: Request) {
       html: `
         <p>Halo ${employee.name},</p>
         <p>Anda menerima dokumen baru: <strong>${finalTitle}</strong>.</p>
-        <p>Kata sandi dokumen:</p>
-        <p><strong>${password}</strong></p>
         <p>Masuk ke portal untuk membuka dokumen.</p>
       `,
     });

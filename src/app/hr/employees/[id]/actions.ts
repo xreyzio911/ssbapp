@@ -4,14 +4,6 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { UserRole, DocType } from "@/lib/enums";
 import { z } from "zod";
-import {
-  decryptFileKeyWithMaster,
-  encryptFileKeyWithPassword,
-  generateToken,
-} from "@/lib/crypto";
-import { hashPassword } from "@/lib/password";
-import { sendEmail } from "@/lib/email";
-import { logAudit } from "@/lib/audit";
 
 const profileSchema = z.object({
   id: z.string().uuid(),
@@ -79,68 +71,3 @@ export async function markDocNeedsUpdateAction(
 
   return { message: "Status dokumen diperbarui." };
 }
-
-export async function reissuePasswordAction(
-  _prevState: { message?: string; error?: string } | null,
-  formData: FormData
-) {
-  const hrUser = await requireRole(UserRole.HR);
-  const assignmentId = String(formData.get("assignmentId") || "");
-  if (!assignmentId) {
-    return { error: "Data tidak lengkap." };
-  }
-
-  const assignment = await prisma.hrFileAssignment.findUnique({
-    where: { id: assignmentId },
-    include: { hrFile: true, employee: true },
-  });
-  if (!assignment) {
-    return { error: "Data tidak ditemukan." };
-  }
-  if (!assignment.employee.email) {
-    return { error: "Email karyawan belum tersedia." };
-  }
-
-  const fileKey = decryptFileKeyWithMaster(
-    Buffer.from(assignment.hrFile.fileKeyEncMaster, "base64"),
-    Buffer.from(assignment.hrFile.fileKeyEncMasterIv, "base64")
-  );
-
-  const newPassword = generateToken(12);
-  const kdfPayload = encryptFileKeyWithPassword(fileKey, newPassword);
-  const passwordHash = await hashPassword(newPassword);
-
-  await prisma.hrFileAssignment.update({
-    where: { id: assignmentId },
-    data: {
-      passwordHash,
-      passwordKdfSalt: kdfPayload.salt.toString("base64"),
-      passwordKdfIterations: kdfPayload.iterations,
-      passwordKdfIv: kdfPayload.iv.toString("base64"),
-      fileKeyEncPassword: kdfPayload.ciphertext.toString("base64"),
-      lastPasswordIssuedAt: new Date(),
-    },
-  });
-
-  await sendEmail({
-    to: assignment.employee.email,
-    subject: "Kata sandi dokumen HR diperbarui",
-    html: `
-      <p>Halo ${assignment.employee.name},</p>
-      <p>Kata sandi baru untuk dokumen "${assignment.hrFile.title}":</p>
-      <p><strong>${newPassword}</strong></p>
-      <p>Simpan kata sandi ini untuk membuka dokumen.</p>
-    `,
-  });
-
-  await logAudit({
-    actorId: hrUser.id,
-    actorRole: UserRole.HR,
-    action: "PASSWORD_REISSUE",
-    targetType: "HrFileAssignment",
-    targetId: assignment.id,
-  });
-
-  return { message: "Kata sandi baru sudah dikirim." };
-}
-

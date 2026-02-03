@@ -62,7 +62,7 @@ export function RoleTabsNav() {
   const { items, activeId, setActiveId } = useRoleTabs();
 
   return (
-    <nav className="flex flex-wrap gap-2">
+    <nav className="inline-flex flex-wrap gap-2 rounded-full border border-white/70 bg-white/80 p-1 shadow-[0_10px_30px_rgba(30,69,62,0.12)]">
       {items.map((item) => {
         const active = activeId === item.id;
         return (
@@ -76,8 +76,8 @@ export function RoleTabsNav() {
             className={cn(
               "rounded-full px-4 py-2 text-sm font-medium transition",
               active
-                ? "bg-[#1E453E] text-white shadow-sm"
-                : "bg-white/80 text-[#1E453E] hover:bg-[#1E453E]/10"
+                ? "bg-[#1E453E] text-white shadow-[0_6px_18px_rgba(30,69,62,0.25)]"
+                : "bg-transparent text-[#1E453E] hover:bg-[#1E453E]/10"
             )}
           >
             {item.label}

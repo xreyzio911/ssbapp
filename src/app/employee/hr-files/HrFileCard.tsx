@@ -17,55 +17,9 @@ type Assignment = {
   signedAt?: string | null;
 };
 
-type MetaResponse = {
-  fileIv: string;
-  fileKeyEncPassword: string;
-  passwordKdfSalt: string;
-  passwordKdfIterations: number;
-  passwordKdfIv: string;
-};
-
-async function deriveKey(
-  password: string,
-  salt: Uint8Array<ArrayBuffer>,
-  iterations: number
-) {
-  const enc = new TextEncoder();
-  const keyMaterial = await crypto.subtle.importKey(
-    "raw",
-    enc.encode(password),
-    "PBKDF2",
-    false,
-    ["deriveKey"]
-  );
-  return crypto.subtle.deriveKey(
-    {
-      name: "PBKDF2",
-      salt,
-      iterations,
-      hash: "SHA-256",
-    },
-    keyMaterial,
-    { name: "AES-GCM", length: 256 },
-    false,
-    ["encrypt", "decrypt"]
-  );
-}
-
-function base64ToBytes(input: string): Uint8Array<ArrayBuffer> {
-  const binary = atob(input);
-  const len = binary.length;
-  const buffer = new ArrayBuffer(len);
-  const bytes = new Uint8Array(buffer) as Uint8Array<ArrayBuffer>;
-  for (let i = 0; i < len; i += 1) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return bytes;
-}
-
 export function HrFileCard({ assignment }: { assignment: Assignment }) {
-  const [password, setPassword] = useState("");
   const [status, setStatus] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [fileBytes, setFileBytes] = useState<Uint8Array | null>(null);
   const [showSign, setShowSign] = useState(false);
@@ -73,52 +27,24 @@ export function HrFileCard({ assignment }: { assignment: Assignment }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const router = useRouter();
 
-  async function decryptAndOpen() {
-    setStatus("Memproses dekripsi...");
+  async function openFile() {
+    setStatus("Memuat dokumen...");
+    setLoading(true);
     try {
-      const metaRes = await fetch(`/api/employee/hr-files/${assignment.id}/metadata`);
-      if (!metaRes.ok) {
-        const data = await metaRes.json();
-        throw new Error(data.error || "Gagal mengambil metadata.");
-      }
-      const meta = (await metaRes.json()) as MetaResponse;
       const blobRes = await fetch(`/api/employee/hr-files/${assignment.id}/blob`);
       if (!blobRes.ok) {
-        throw new Error("Gagal mengambil file terenkripsi.");
+        const data = await blobRes.json();
+        throw new Error(data.error || "Gagal mengambil dokumen.");
       }
-      const encrypted = new Uint8Array(await blobRes.arrayBuffer());
-
-      const key = await deriveKey(
-        password,
-        base64ToBytes(meta.passwordKdfSalt),
-        meta.passwordKdfIterations
-      );
-
-      const fileKey = await crypto.subtle.decrypt(
-        {
-          name: "AES-GCM",
-          iv: base64ToBytes(meta.passwordKdfIv),
-        },
-        key,
-        base64ToBytes(meta.fileKeyEncPassword)
-      );
-
-      const decrypted = await crypto.subtle.decrypt(
-        { name: "AES-GCM", iv: base64ToBytes(meta.fileIv) },
-        await crypto.subtle.importKey("raw", fileKey, "AES-GCM", false, [
-          "decrypt",
-        ]),
-        encrypted
-      );
-
-      const bytes = new Uint8Array(decrypted);
+      const bytes = new Uint8Array(await blobRes.arrayBuffer());
       setFileBytes(bytes);
       const url = URL.createObjectURL(new Blob([bytes], { type: assignment.mimeType }));
       setFileUrl(url);
       setStatus(null);
     } catch (err: any) {
-      setStatus(err.message || "Gagal mendekripsi file.");
+      setStatus(err.message || "Gagal memuat dokumen.");
     }
+    setLoading(false);
   }
 
   function clearCanvas() {
@@ -282,24 +208,9 @@ export function HrFileCard({ assignment }: { assignment: Assignment }) {
       </div>
 
       <div className="mt-4 space-y-3">
-        <div>
-          <label className="mb-1 block text-xs font-medium text-[#1E453E]">
-            Kata sandi dokumen
-          </label>
-          <input
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            placeholder="Masukkan kata sandi dari email"
-            className="w-full rounded-2xl border border-[#1E453E]/15 bg-white px-4 py-2 text-sm"
-          />
-          <p className="mt-1 text-xs text-[#6c6f6e]">
-            Lupa kata sandi? Hubungi HR untuk kirim ulang.
-          </p>
-        </div>
         <div className="flex flex-wrap gap-2">
-          <Button type="button" onClick={decryptAndOpen} disabled={!password}>
-            Dekripsi &amp; Buka
+          <Button type="button" onClick={openFile} disabled={loading}>
+            Buka dokumen
           </Button>
           {fileUrl ? (
             <a

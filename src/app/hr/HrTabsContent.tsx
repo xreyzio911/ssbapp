@@ -2,6 +2,7 @@
 
 import { useRoleTabs } from "@/components/nav/RoleTabs";
 import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { InviteEmployeeForm } from "./InviteEmployeeForm";
 import { EmployeeList } from "./EmployeeList";
 import { BatchUploadForm } from "./batch-upload/BatchUploadForm";
@@ -23,12 +24,12 @@ type AuditLog = {
 const actionLabels: Record<string, string> = {
   UPLOAD_EMPLOYEE_DOC: "Unggah dokumen karyawan",
   UPLOAD_HR_FILE: "Unggah dokumen HR",
-  DOWNLOAD_HR_FILE_ENC: "Unduh dokumen HR (terenkripsi)",
+  DOWNLOAD_HR_FILE_ENC: "Unduh dokumen HR",
   DOWNLOAD_HR_FILE: "Unduh dokumen HR",
   DOWNLOAD_HR_SIGNED: "Unduh dokumen signed",
   DOWNLOAD_EMPLOYEE_DOC: "Unduh dokumen karyawan",
   SIGN_AGREEMENT: "Tanda tangan perjanjian",
-  PASSWORD_REISSUE: "Kirim ulang kata sandi dokumen",
+  PASSWORD_REISSUE: "Kirim ulang notifikasi dokumen",
 };
 
 export function HrTabsContent({
@@ -100,7 +101,11 @@ export function HrTabsContent({
             </div>
           ))}
           {logs.length === 0 ? (
-            <p className="text-sm text-[#6c6f6e]">Belum ada aktivitas.</p>
+            <EmptyState
+              title="Belum ada aktivitas"
+              description="Aktivitas terbaru akan muncul di sini."
+              className="mt-4"
+            />
           ) : null}
         </div>
       </Card>
@@ -108,7 +113,7 @@ export function HrTabsContent({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
       <Card>
         <h2 className="text-lg font-semibold text-[#1E453E]">
           Undang Karyawan
@@ -124,6 +129,9 @@ export function HrTabsContent({
         <h2 className="text-lg font-semibold text-[#1E453E]">
           Daftar Karyawan
         </h2>
+        <p className="text-sm text-[#6c6f6e]">
+          Klik tombol detail untuk melihat profil dan dokumen karyawan.
+        </p>
         <div className="mt-4">
           <EmployeeList employees={employees} />
         </div>

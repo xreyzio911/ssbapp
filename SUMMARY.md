@@ -37,18 +37,16 @@ A production-ready but minimal HR + employee portal for Manpower to collect and 
   - File type + size validation (max 15MB)
 - **Encryption for HR-Uploaded Files**
   - HR files encrypted at rest (AES-GCM)
-  - Per-employee password auto-generated and emailed
-  - Password hash only (no plaintext storage)
-  - Client-side decryption with WebCrypto
-  - “Re-issue password” flow (HR can resend)
+  - Decrypted server-side for authenticated employees
+  - Notification email sent when HR assigns a file
 - **Agreement Signing**
   - HR uploads PDF agreement and assigns
-  - Employee decrypts, reviews, then signs
+  - Employee reviews, then signs
   - Signature pad + signer name + timestamp
   - Signed PDF generated + stored
   - HR can download signed version and see status
 - **Audit Log**
-  - Upload, download, sign, password reissue events
+  - Upload, download, sign events
 
 ## Data Model (Prisma)
 - Users, Sessions, Invitations, PasswordResets
@@ -104,12 +102,12 @@ A production-ready but minimal HR + employee portal for Manpower to collect and 
 ## Known Requirements / Constraints
 - UI text must remain in Indonesian
 - HR has full access; employees can only access their own data
-- Passwords for HR files must never be stored in plaintext
+- HR files must remain encrypted at rest
 
 ## Verification Checklist
 - HR creates employee ? invite email arrives ? employee sets password and logs in
 - Employee uploads KTP ? HR can view/download
-- HR batch uploads agreement ? employee receives password email ? decrypts ? signs ? HR sees signed PDF
+- HR batch uploads agreement ? employee receives email notification ? opens ? signs ? HR sees signed PDF
 
 ## Latest commits
 - `e40b075` NextRequest fixes in dynamic routes

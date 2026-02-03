@@ -7,6 +7,7 @@ import { DOC_TYPES } from "@/lib/constants";
 import { DocumentUploadCard } from "./documents/DocumentUploadCard";
 import { HrFileCard } from "./hr-files/HrFileCard";
 import { EmployeeProfileForm } from "./profile/EmployeeProfileForm";
+import { EmptyState } from "@/components/ui/empty-state";
 
 type UserProfile = {
   email: string;
@@ -110,11 +111,14 @@ export function EmployeeTabsContent({
             Dokumen dari HR
           </h2>
           <p className="text-sm text-[#6c6f6e]">
-            Gunakan kata sandi dari email untuk membuka dokumen.
+            Dokumen dapat dibuka langsung setelah login.
           </p>
         </div>
         {assignments.length === 0 ? (
-          <p className="text-sm text-[#6c6f6e]">Belum ada dokumen dari HR.</p>
+          <EmptyState
+            title="Belum ada dokumen dari HR"
+            description="Dokumen baru dari HR akan muncul di sini."
+          />
         ) : (
           <div className="space-y-4">
             {assignments.map((assignment) => (

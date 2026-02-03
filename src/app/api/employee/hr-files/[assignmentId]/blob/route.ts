@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { UserRole } from "@/lib/enums";
 import { readFileBuffer } from "@/lib/storage";
 import { logAudit } from "@/lib/audit";
+import { decryptFileKeyWithMaster, decryptAesGcm } from "@/lib/crypto";
 
 export async function GET(
   _req: NextRequest,
@@ -24,6 +25,15 @@ export async function GET(
   }
 
   const buffer = await readFileBuffer(assignment.hrFile.storagePath);
+  const fileKey = decryptFileKeyWithMaster(
+    Buffer.from(assignment.hrFile.fileKeyEncMaster, "base64"),
+    Buffer.from(assignment.hrFile.fileKeyEncMasterIv, "base64")
+  );
+  const plaintext = decryptAesGcm(
+    buffer,
+    fileKey,
+    Buffer.from(assignment.hrFile.fileIv, "base64")
+  );
   await logAudit({
     actorId: user.id,
     actorRole: user.role,
@@ -31,10 +41,10 @@ export async function GET(
     targetType: "HrFileAssignment",
     targetId: assignment.id,
   });
-  return new Response(buffer, {
+  return new Response(plaintext, {
     headers: {
-      "Content-Type": "application/octet-stream",
-      "Content-Length": buffer.length.toString(),
+      "Content-Type": assignment.hrFile.mimeType,
+      "Content-Length": plaintext.length.toString(),
     },
   });
 }

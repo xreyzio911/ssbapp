@@ -1,4 +1,7 @@
 # TODO
+- [x] Remove HR-file password UI and copy; open documents directly after login (verify: HR docs open without password prompt).
+- [x] Serve decrypted HR files to employees and remove password-related HR reissue UI (verify: employee blob endpoint returns plaintext, HR detail page has no password reissue).
+- [x] Update HR-file notification emails to remove password content (verify: upload email template contains no password text).
 - [x] Add a batch upload "Mode" (shared vs specific) UI and pairing table for specific uploads (verify: UI shows mode toggle and per-file employee mapping).
 - [x] Extend HR batch upload API to support specific (multi-file, per-employee) assignments while keeping shared mode behavior (verify: server validation passes with both modes).
 - [x] Quick sanity check of TypeScript build (verify: `npm test` or `npm run build` as feasible).
@@ -45,3 +48,7 @@
 - Added batch upload mode selector (shared vs specific) and per-file employee pairing UI for specific uploads.
 - Extended `/api/hr/files/upload` to accept mode + multi-file specific assignments with validation and per-file encryption.
 - Verified with `npm test`.
+- Removed HR-file password prompt and copy; employees open documents directly after login.
+- Updated employee blob endpoint to decrypt server-side and return plaintext content.
+- Removed password reissue UI/action and updated HR-file email templates to remove password text.
+- Re-verified with `npm test`.
