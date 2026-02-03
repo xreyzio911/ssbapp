@@ -14,6 +14,7 @@
 - [x] Implement client-side tab navigation for HR/Employee with shared data to avoid slow route switches (verify: tabs switch without navigation).
 - [x] Add loading skeletons for /hr and /employee routes (verify: loading UI appears on initial load).
 - [x] Redirect legacy subroutes to tab hashes to avoid broken nav (verify: /hr/batch-upload and /employee/documents redirect to main tabs).
+- [x] Use 303 redirect after POST /logout to avoid POST -> /login 405 (verify: logout returns to login).
 
 # Review
 - Added `tests/typecheck.test.ts` to run `tsc --noEmit` during `npm test`.
@@ -37,3 +38,4 @@
 - Replaced HR/Employee nav links with client-side tabs and shared tab state via a provider.
 - Consolidated HR/Employee content into tab panels and added loading skeletons.
 - Redirected legacy subroutes to hash-based tabs and verified tests.
+- Logout now redirects with 303 so POST converts to GET on /login.
