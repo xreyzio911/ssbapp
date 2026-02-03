@@ -1,7 +1,11 @@
 import { clearSession } from "@/lib/auth";
-import { redirect } from "next/navigation";
+import { NextResponse } from "next/server";
 
-export async function GET() {
+export async function POST(req: Request) {
   await clearSession();
-  redirect("/login");
+  return NextResponse.redirect(new URL("/login", req.url));
+}
+
+export async function GET(req: Request) {
+  return NextResponse.redirect(new URL("/login", req.url));
 }

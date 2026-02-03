@@ -1,6 +1,5 @@
 import { requireRole } from "@/lib/auth";
 import { UserRole } from "@/lib/enums";
-import Link from "next/link";
 import { RoleNav } from "@/components/nav/RoleNav";
 
 export default async function HrLayout({
@@ -22,9 +21,11 @@ export default async function HrLayout({
               {user.name}
             </h1>
           </div>
-          <Link href="/logout" className="text-sm text-[#1E453E] underline">
-            Keluar
-          </Link>
+          <form action="/logout" method="post">
+            <button type="submit" className="text-sm text-[#1E453E] underline">
+              Keluar
+            </button>
+          </form>
         </div>
         <RoleNav
           items={[

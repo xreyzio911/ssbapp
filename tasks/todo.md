@@ -10,6 +10,7 @@
 - [x] Update prisma seed to use the driver adapter so it can connect in this project setup (verify: `npm run db:seed` works).
 - [x] Parse DATABASE_URL in seed and set explicit pg Pool options to avoid TLS chain errors (verify: `npm run db:seed` works).
 - [x] Configure pg Pool SSL in runtime DB client for Supabase pooler TLS (verify: login works in production).
+- [x] Prevent logout via GET/prefetch by switching to POST and replacing logout links with a form button.
 
 # Review
 - Added `tests/typecheck.test.ts` to run `tsc --noEmit` during `npm test`.
@@ -29,3 +30,4 @@
 - Seed now parses `DATABASE_URL` and sets `ssl.rejectUnauthorized=false` to bypass local TLS chain issues.
 - Verified `npm run db:seed` succeeds.
 - Runtime DB client now enables SSL (with `rejectUnauthorized=false`) when using Supabase pooler or sslmode.
+- Logout now uses POST; GET /logout only redirects to /login to avoid prefetch-triggered logout.
