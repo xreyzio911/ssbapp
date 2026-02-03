@@ -20,7 +20,7 @@ export async function GET() {
   });
 
   const present = new Map<string, Set<string>>();
-  versions.forEach((v) => {
+  versions.forEach((v: { userId: string; docType: string }) => {
     const set = present.get(v.userId) ?? new Set<string>();
     set.add(v.docType);
     present.set(v.userId, set);
