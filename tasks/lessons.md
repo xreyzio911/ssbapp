@@ -6,3 +6,4 @@
 - Prisma config `env("DATABASE_URL")` throws during install if the env var isn’t set; use optional `process.env` or conditional datasource to allow `prisma generate` without a DB URL.
 - When using Prisma driver adapters in the app, `prisma/seed.ts` must construct `PrismaClient` with the same adapter (or it will throw during init).
 - For Supabase pooler + local seed, parse `DATABASE_URL` manually and pass explicit `ssl` options to `pg` Pool to avoid `sslmode` inference and TLS chain errors.
+- Supabase pooler can present a TLS chain that pg rejects; set `ssl.rejectUnauthorized=false` on the runtime Pool when using pooler/sslmode.

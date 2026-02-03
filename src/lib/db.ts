@@ -7,10 +7,16 @@ const globalForPrisma = global as unknown as {
   pgPool?: Pool;
 };
 
+const databaseUrl = process.env.DATABASE_URL;
+const shouldUseSsl =
+  !!databaseUrl &&
+  (databaseUrl.includes("sslmode=") || databaseUrl.includes("pooler.supabase.com"));
+
 const pool =
   globalForPrisma.pgPool ??
   new Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: databaseUrl,
+    ssl: shouldUseSsl ? { rejectUnauthorized: false } : undefined,
   });
 
 export const prisma =
