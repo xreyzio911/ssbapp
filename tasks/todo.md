@@ -1,4 +1,7 @@
 # TODO
+- [x] Add a batch upload "Mode" (shared vs specific) UI and pairing table for specific uploads (verify: UI shows mode toggle and per-file employee mapping).
+- [x] Extend HR batch upload API to support specific (multi-file, per-employee) assignments while keeping shared mode behavior (verify: server validation passes with both modes).
+- [x] Quick sanity check of TypeScript build (verify: `npm test` or `npm run build` as feasible).
 - [x] Add a typecheck test that runs `tsc --noEmit` to reproduce the current build error (verify: `npm test` fails with implicit any).
 - [x] Fix the implicit `any` in `src/app/api/hr/files/upload/route.ts` (verify: `npm test` passes).
 - [x] Run `npm run build` to confirm no other deployment errors remain (verify: build succeeds).
@@ -39,3 +42,6 @@
 - Consolidated HR/Employee content into tab panels and added loading skeletons.
 - Redirected legacy subroutes to hash-based tabs and verified tests.
 - Logout now redirects with 303 so POST converts to GET on /login.
+- Added batch upload mode selector (shared vs specific) and per-file employee pairing UI for specific uploads.
+- Extended `/api/hr/files/upload` to accept mode + multi-file specific assignments with validation and per-file encryption.
+- Verified with `npm test`.

@@ -1,4 +1,4 @@
-# SSB Employees & HR Portal — Status Summary
+ï»¿# SSB Employees & HR Portal â€” Status Summary
 
 ## Purpose (What the app is)
 A production-ready but minimal HR + employee portal for Manpower to collect and distribute personal documents. There are two roles (HR and Employee). Employees upload required documents; HR can view/download them and send encrypted HR files (including agreements) to employees. Agreements support simple e-signature with a signature pad and signed PDF generation. All UI text is in Indonesian.
@@ -40,7 +40,7 @@ A production-ready but minimal HR + employee portal for Manpower to collect and 
   - Per-employee password auto-generated and emailed
   - Password hash only (no plaintext storage)
   - Client-side decryption with WebCrypto
-  - “Re-issue password” flow (HR can resend)
+  - â€œRe-issue passwordâ€ flow (HR can resend)
 - **Agreement Signing**
   - HR uploads PDF agreement and assigns
   - Employee decrypts, reviews, then signs
@@ -63,6 +63,9 @@ A production-ready but minimal HR + employee portal for Manpower to collect and 
 - **Enum imports**: Using local `src/lib/enums.ts` for app enums to avoid build/type export issues from `@prisma/client` during Next build.
 - **TypeScript fixes**: Added `@types/pg` and `@types/nodemailer` for clean builds.
 - **WebCrypto/Blob typing**: Adjusted Uint8Array usage for PBKDF2 and Blob construction.
+- **Prisma client generation**: runs on `postinstall` for Vercel builds.
+- **Prisma config**: tolerates missing `DATABASE_URL` during install (conditional datasource).
+- **DB SSL**: runtime Pool enables SSL when a pooler host or `sslmode=` is present in `DATABASE_URL`.
 
 ## Recent Fixes (Deployment blockers addressed)
 - Next 16 route handler params signature fixes in all dynamic API routes.
@@ -71,6 +74,14 @@ A production-ready but minimal HR + employee portal for Manpower to collect and 
 - Replaced Prisma enums with local `src/lib/enums.ts` in app code.
 - Added missing TS types for pg + nodemailer.
 - Build now passes locally: `npm run build` succeeded.
+- Added `tests/typecheck.test.ts` to run `tsc --noEmit` in `npm test`.
+- Added explicit callback typing where Prisma result inference caused implicit `any`.
+- Fixed `Map` inference for `needsUpdate` to stay boolean.
+- `/logout` now uses POST + 303 redirect (GET only redirects) to avoid prefetch logout and 405s.
+- HR/Employee nav is now client-side tabs; content consolidated into tab panels for faster switching.
+- Added loading skeletons for `/hr` and `/employee`.
+- Legacy subroutes redirect to hash tabs (e.g., `/hr/batch-upload` -> `/hr#batch`).
+- Seed now uses the Prisma driver adapter and parses `DATABASE_URL`; explicit pg SSL options included.
 
 ## How to Run Locally (Quick)
 1) `npm install`
@@ -88,6 +99,7 @@ A production-ready but minimal HR + employee portal for Manpower to collect and 
 - Set all env vars in Vercel
 - Build command: `npm run build`
 - Run migrations manually on Supabase before first deploy
+- Use a Supabase pooler URL for Vercel (IPv4); SSL is enabled automatically when `sslmode=` or a pooler host is detected.
 
 ## Known Requirements / Constraints
 - UI text must remain in Indonesian
