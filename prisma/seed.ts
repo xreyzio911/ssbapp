@@ -1,7 +1,25 @@
 import { PrismaClient, UserRole } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
 import { hashPassword } from "../src/lib/password";
 
-const prisma = new PrismaClient();
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL must be set to run the seed.");
+}
+
+const parsed = new URL(databaseUrl);
+const pool = new Pool({
+  host: parsed.hostname,
+  port: parsed.port ? Number(parsed.port) : 5432,
+  user: decodeURIComponent(parsed.username),
+  password: decodeURIComponent(parsed.password),
+  database: parsed.pathname.replace(/^\//, ""),
+  ssl: { rejectUnauthorized: false },
+});
+const prisma = new PrismaClient({
+  adapter: new PrismaPg(pool),
+});
 
 async function main() {
   const email = process.env.HR_EMAIL;
@@ -38,4 +56,5 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect();
+    await pool.end();
   });

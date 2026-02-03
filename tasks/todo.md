@@ -7,6 +7,8 @@
 - [x] Replace status map construction in server pages to avoid `{}` inference (verify: `npm test` passes, `npm run build` passes).
 - [x] Ensure Prisma client is generated during install for Vercel builds (verify: `npm run build` passes, Vercel build runs `postinstall`).
 - [x] Allow `prisma generate` without DATABASE_URL by making datasource optional in `prisma.config.ts` (verify: generate passes with empty env).
+- [x] Update prisma seed to use the driver adapter so it can connect in this project setup (verify: `npm run db:seed` works).
+- [x] Parse DATABASE_URL in seed and set explicit pg Pool options to avoid TLS chain errors (verify: `npm run db:seed` works).
 
 # Review
 - Added `tests/typecheck.test.ts` to run `tsc --noEmit` during `npm test`.
@@ -22,3 +24,6 @@
 - Re-verified with `npm run build`.
 - Made `prisma.config.ts` tolerate missing `DATABASE_URL` so Vercel install can run `prisma generate`.
 - Verified `prisma generate` with `DATABASE_URL` unset and `npm run build`.
+- Seed now uses `@prisma/adapter-pg` + `pg` Pool and closes the pool after seeding.
+- Seed now parses `DATABASE_URL` and sets `ssl.rejectUnauthorized=false` to bypass local TLS chain issues.
+- Verified `npm run db:seed` succeeds.

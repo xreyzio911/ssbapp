@@ -4,3 +4,5 @@
 - Avoid `new Map(array.map(() => [k, v]))` without tuple typing; use `Map<string, boolean>()` plus `set` to prevent `{}` inference.
 - Vercel builds may not run `prisma generate` unless wired into `postinstall`; missing Prisma client types show up as "no exported member PrismaClient".
 - Prisma config `env("DATABASE_URL")` throws during install if the env var isn’t set; use optional `process.env` or conditional datasource to allow `prisma generate` without a DB URL.
+- When using Prisma driver adapters in the app, `prisma/seed.ts` must construct `PrismaClient` with the same adapter (or it will throw during init).
+- For Supabase pooler + local seed, parse `DATABASE_URL` manually and pass explicit `ssl` options to `pg` Pool to avoid `sslmode` inference and TLS chain errors.
