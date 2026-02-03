@@ -68,7 +68,7 @@ export async function POST(req: Request) {
   const employees = await prisma.user.findMany({
     where: { id: { in: employeeIds }, role: UserRole.EMPLOYEE },
   });
-  const missingEmail = employees.filter((emp) => !emp.email);
+  const missingEmail = employees.filter((emp: { email: string | null }) => !emp.email);
   if (missingEmail.length > 0) {
     return NextResponse.json(
       { error: "Ada karyawan tanpa email. Mohon lengkapi email sebelum mengirim." },
