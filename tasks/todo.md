@@ -6,6 +6,7 @@
 - [x] Add explicit callback types in server components that iterate Prisma results (verify: `npm test` passes, `npm run build` passes).
 - [x] Replace status map construction in server pages to avoid `{}` inference (verify: `npm test` passes, `npm run build` passes).
 - [x] Ensure Prisma client is generated during install for Vercel builds (verify: `npm run build` passes, Vercel build runs `postinstall`).
+- [x] Allow `prisma generate` without DATABASE_URL by making datasource optional in `prisma.config.ts` (verify: generate passes with empty env).
 
 # Review
 - Added `tests/typecheck.test.ts` to run `tsc --noEmit` during `npm test`.
@@ -19,3 +20,5 @@
 - Re-verified with `npm test` and `npm run build`.
 - Added `postinstall` script to run `prisma generate` so Vercel has generated client types.
 - Re-verified with `npm run build`.
+- Made `prisma.config.ts` tolerate missing `DATABASE_URL` so Vercel install can run `prisma generate`.
+- Verified `prisma generate` with `DATABASE_URL` unset and `npm run build`.

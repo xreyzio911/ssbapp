@@ -3,3 +3,4 @@
 - Prisma result typing can be missing in server components during build; annotate map/filter/forEach callback params for Prisma results to avoid implicit-any errors.
 - Avoid `new Map(array.map(() => [k, v]))` without tuple typing; use `Map<string, boolean>()` plus `set` to prevent `{}` inference.
 - Vercel builds may not run `prisma generate` unless wired into `postinstall`; missing Prisma client types show up as "no exported member PrismaClient".
+- Prisma config `env("DATABASE_URL")` throws during install if the env var isn’t set; use optional `process.env` or conditional datasource to allow `prisma generate` without a DB URL.
