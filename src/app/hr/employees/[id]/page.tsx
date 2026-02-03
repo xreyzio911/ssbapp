@@ -41,12 +41,10 @@ export default async function EmployeeDetailPage({
     }),
   ]);
 
-  const statusByType = new Map(
-    statuses.map((s: { docType: string; needsUpdate: boolean }) => [
-      s.docType,
-      s.needsUpdate,
-    ])
-  );
+  const statusByType = new Map<string, boolean>();
+  statuses.forEach((s: { docType: string; needsUpdate: boolean }) => {
+    statusByType.set(s.docType, s.needsUpdate);
+  });
   const versionsByType = DOC_TYPES.reduce((acc, doc) => {
     acc[doc.type] = versions.filter(
       (v: { docType: string }) => v.docType === doc.type

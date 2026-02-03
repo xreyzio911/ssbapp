@@ -24,12 +24,10 @@ export default async function EmployeeDocumentsPage() {
       latestByType.set(version.docType, version.createdAt);
     }
   });
-  const statusByType = new Map(
-    statuses.map((s: { docType: string; needsUpdate: boolean }) => [
-      s.docType,
-      s.needsUpdate,
-    ])
-  );
+  const statusByType = new Map<string, boolean>();
+  statuses.forEach((s: { docType: string; needsUpdate: boolean }) => {
+    statusByType.set(s.docType, s.needsUpdate);
+  });
 
   return (
     <Card>
