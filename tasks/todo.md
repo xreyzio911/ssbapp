@@ -11,6 +11,9 @@
 - [x] Parse DATABASE_URL in seed and set explicit pg Pool options to avoid TLS chain errors (verify: `npm run db:seed` works).
 - [x] Configure pg Pool SSL in runtime DB client for Supabase pooler TLS (verify: login works in production).
 - [x] Prevent logout via GET/prefetch by switching to POST and replacing logout links with a form button.
+- [x] Implement client-side tab navigation for HR/Employee with shared data to avoid slow route switches (verify: tabs switch without navigation).
+- [x] Add loading skeletons for /hr and /employee routes (verify: loading UI appears on initial load).
+- [x] Redirect legacy subroutes to tab hashes to avoid broken nav (verify: /hr/batch-upload and /employee/documents redirect to main tabs).
 
 # Review
 - Added `tests/typecheck.test.ts` to run `tsc --noEmit` during `npm test`.
@@ -31,3 +34,6 @@
 - Verified `npm run db:seed` succeeds.
 - Runtime DB client now enables SSL (with `rejectUnauthorized=false`) when using Supabase pooler or sslmode.
 - Logout now uses POST; GET /logout only redirects to /login to avoid prefetch-triggered logout.
+- Replaced HR/Employee nav links with client-side tabs and shared tab state via a provider.
+- Consolidated HR/Employee content into tab panels and added loading skeletons.
+- Redirected legacy subroutes to hash-based tabs and verified tests.
