@@ -129,7 +129,7 @@ export function EmployeeList({ employees }: { employees: Employee[] }) {
         ? createPortal(
             <div className="fixed inset-0 z-50">
               <div
-                className="absolute inset-0 bg-white/20 backdrop-blur-sm"
+                className="absolute inset-0 bg-white/10 backdrop-blur-[2px]"
                 onClick={() => setActiveEmployee(null)}
               />
               <div

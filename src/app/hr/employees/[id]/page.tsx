@@ -12,11 +12,12 @@ import Link from "next/link";
 export default async function EmployeeDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   await requireRole(UserRole.HR);
+  const { id } = await params;
   const employee = await prisma.user.findUnique({
-    where: { id: params.id },
+    where: { id },
   });
   if (!employee) {
     return (
