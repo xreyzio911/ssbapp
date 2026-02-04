@@ -9,3 +9,4 @@
 - Supabase pooler can present a TLS chain that pg rejects; set `ssl.rejectUnauthorized=false` on the runtime Pool when using pooler/sslmode.
 - GET logout endpoints are vulnerable to Next.js prefetch; use POST + a form button to avoid automatic session clears.
 - Use 303 redirect after POST to /logout so the browser switches to GET on /login and avoids 405.
+- Fixed overlays can be scoped by ancestors with `backdrop-filter`/`transform`; render modals via a portal to `document.body` to guarantee full-viewport centering and blur coverage (verify visually).

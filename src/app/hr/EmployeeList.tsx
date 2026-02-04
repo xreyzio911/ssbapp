@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/ui/empty-state";
+import { createPortal } from "react-dom";
 
 type Employee = {
   id: string;
@@ -15,6 +16,7 @@ export function EmployeeList({ employees }: { employees: Employee[] }) {
   const [query, setQuery] = useState("");
   const [activeEmployee, setActiveEmployee] = useState<Employee | null>(null);
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
   const dialogTitleId = "detail-cepat-title";
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
@@ -23,6 +25,10 @@ export function EmployeeList({ employees }: { employees: Employee[] }) {
         emp.name.toLowerCase().includes(q) || emp.email.toLowerCase().includes(q)
     );
   }, [query, employees]);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!activeEmployee) return;
@@ -119,100 +125,103 @@ export function EmployeeList({ employees }: { employees: Employee[] }) {
           description="Coba kata kunci lain atau undang karyawan baru."
         />
       ) : null}
-      {activeEmployee ? (
-        <div className="fixed inset-0 z-50">
-          <div
-            className="absolute inset-0 bg-white/30 backdrop-blur-sm"
-            onClick={() => setActiveEmployee(null)}
-          />
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={dialogTitleId}
-            className="absolute left-1/2 top-1/2 w-[min(92vw,520px)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl border border-white/70 bg-[#f7f7f2] p-6 shadow-[0_30px_80px_rgba(0,0,0,0.28)]"
-            style={{ maxHeight: "90vh" }}
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-[#1E453E]/60">
-                  Detail Cepat
-                </p>
-                <h3
-                  id={dialogTitleId}
-                  className="mt-2 text-2xl font-semibold text-[#1E453E]"
-                >
-                  {activeEmployee.name}
-                </h3>
-                <p className="text-sm text-[#6c6f6e]">
-                  {activeEmployee.email}
-                </p>
-              </div>
-              <button
-                type="button"
+      {mounted && activeEmployee
+        ? createPortal(
+            <div className="fixed inset-0 z-50">
+              <div
+                className="absolute inset-0 bg-white/20 backdrop-blur-sm"
                 onClick={() => setActiveEmployee(null)}
-                className="rounded-full border border-[#1E453E]/20 px-4 py-1 text-xs font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
+              />
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={dialogTitleId}
+                className="absolute left-1/2 top-1/2 w-[min(92vw,520px)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl border border-white/70 bg-[#f7f7f2] p-6 shadow-[0_30px_80px_rgba(0,0,0,0.28)]"
+                style={{ maxHeight: "90vh" }}
               >
-                Tutup
-              </button>
-            </div>
-
-            <div className="mt-6 space-y-4">
-              <div className="rounded-2xl border border-[#1E453E]/10 bg-white p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-[#6c6f6e]">
-                  Informasi Kontak
-                </p>
-                <div className="mt-3 space-y-1 text-sm text-[#1E453E]">
-                  <p>{activeEmployee.email}</p>
-                  {copyStatus ? (
-                    <p className="text-xs text-[#6c6f6e]">{copyStatus}</p>
-                  ) : null}
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.3em] text-[#1E453E]/60">
+                      Detail Cepat
+                    </p>
+                    <h3
+                      id={dialogTitleId}
+                      className="mt-2 text-2xl font-semibold text-[#1E453E]"
+                    >
+                      {activeEmployee.name}
+                    </h3>
+                    <p className="text-sm text-[#6c6f6e]">
+                      {activeEmployee.email}
+                    </p>
+                  </div>
                   <button
                     type="button"
-                    onClick={() => handleCopyEmail(activeEmployee.email)}
-                    className="rounded-full border border-[#1E453E]/20 px-4 py-2 text-xs font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
+                    onClick={() => setActiveEmployee(null)}
+                    className="rounded-full border border-[#1E453E]/20 px-4 py-1 text-xs font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
                   >
-                    Salin email
+                    Tutup
                   </button>
-                  <a
-                    href={`mailto:${activeEmployee.email}`}
-                    className="rounded-full border border-[#1E453E]/20 px-4 py-2 text-xs font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
-                  >
-                    Kirim email
-                  </a>
                 </div>
-              </div>
 
-              <div className="rounded-2xl border border-[#1E453E]/10 bg-white p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-[#6c6f6e]">
-                  Aksi Cepat
-                </p>
-                <div className="mt-4 grid gap-2">
-                  <Link
-                    href={`/hr/employees/${activeEmployee.id}`}
-                    className="rounded-2xl border border-[#1E453E]/10 px-4 py-3 text-sm font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
-                  >
-                    Buka profil lengkap
-                  </Link>
-                  <Link
-                    href={`/hr/employees/${activeEmployee.id}#dokumen-pribadi`}
-                    className="rounded-2xl border border-[#1E453E]/10 px-4 py-3 text-sm font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
-                  >
-                    Lihat dokumen pribadi
-                  </Link>
-                  <Link
-                    href={`/hr/employees/${activeEmployee.id}#dokumen-hr`}
-                    className="rounded-2xl border border-[#1E453E]/10 px-4 py-3 text-sm font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
-                  >
-                    Lihat dokumen HR
-                  </Link>
+                <div className="mt-6 space-y-4">
+                  <div className="rounded-2xl border border-[#1E453E]/10 bg-white p-4">
+                    <p className="text-xs uppercase tracking-[0.2em] text-[#6c6f6e]">
+                      Informasi Kontak
+                    </p>
+                    <div className="mt-3 space-y-1 text-sm text-[#1E453E]">
+                      <p>{activeEmployee.email}</p>
+                      {copyStatus ? (
+                        <p className="text-xs text-[#6c6f6e]">{copyStatus}</p>
+                      ) : null}
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleCopyEmail(activeEmployee.email)}
+                        className="rounded-full border border-[#1E453E]/20 px-4 py-2 text-xs font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
+                      >
+                        Salin email
+                      </button>
+                      <a
+                        href={`mailto:${activeEmployee.email}`}
+                        className="rounded-full border border-[#1E453E]/20 px-4 py-2 text-xs font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
+                      >
+                        Kirim email
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-[#1E453E]/10 bg-white p-4">
+                    <p className="text-xs uppercase tracking-[0.2em] text-[#6c6f6e]">
+                      Aksi Cepat
+                    </p>
+                    <div className="mt-4 grid gap-2">
+                      <Link
+                        href={`/hr/employees/${activeEmployee.id}`}
+                        className="rounded-2xl border border-[#1E453E]/10 px-4 py-3 text-sm font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
+                      >
+                        Buka profil lengkap
+                      </Link>
+                      <Link
+                        href={`/hr/employees/${activeEmployee.id}#dokumen-pribadi`}
+                        className="rounded-2xl border border-[#1E453E]/10 px-4 py-3 text-sm font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
+                      >
+                        Lihat dokumen pribadi
+                      </Link>
+                      <Link
+                        href={`/hr/employees/${activeEmployee.id}#dokumen-hr`}
+                        className="rounded-2xl border border-[#1E453E]/10 px-4 py-3 text-sm font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
+                      >
+                        Lihat dokumen HR
+                      </Link>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
+            </div>,
+            document.body
+          )
+        : null}
     </div>
   );
 }
