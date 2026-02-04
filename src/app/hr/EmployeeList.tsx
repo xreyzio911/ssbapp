@@ -86,7 +86,7 @@ export function EmployeeList({ employees }: { employees: Employee[] }) {
           Menampilkan {filtered.length} dari {employees.length} karyawan
         </span>
       </div>
-      <div className="grid gap-3 md:grid-cols-2 stagger">
+      <div className="grid gap-3 md:grid-cols-2">
         {filtered.map((employee) => (
           <div
             key={employee.id}

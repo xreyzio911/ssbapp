@@ -4,7 +4,6 @@ import { DOC_TYPES, DOC_TYPE_LABELS } from "@/lib/constants";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
-import { EmployeeProfileEditor } from "./EmployeeProfileEditor";
 import { DocStatusToggle } from "./DocStatusToggle";
 import { UserRole } from "@/lib/enums";
 import Link from "next/link";
@@ -84,7 +83,7 @@ export default async function EmployeeDetailPage({
         </Link>
         <div className="text-sm text-[#6c6f6e]">{employee.email}</div>
       </div>
-      <div className="reveal rounded-3xl border border-white/70 bg-white/80 p-6 shadow-[0_18px_50px_rgba(30,69,62,0.12)] backdrop-blur">
+      <div className="rounded-3xl border border-white/70 bg-white/80 p-6 shadow-[0_18px_50px_rgba(30,69,62,0.12)] backdrop-blur">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-[#1E453E]/50">
@@ -119,7 +118,7 @@ export default async function EmployeeDetailPage({
             </span>
           </div>
         </div>
-        <div className="mt-6 grid gap-3 md:grid-cols-3 stagger">
+        <div className="mt-6 grid gap-3 md:grid-cols-3">
           <div className="rounded-2xl border border-[#1E453E]/10 bg-white/90 p-4">
             <p className="text-xs uppercase tracking-[0.2em] text-[#6c6f6e]">
               Dokumen Pribadi
@@ -160,10 +159,10 @@ export default async function EmployeeDetailPage({
         </p>
         <div className="mt-4 grid gap-3 md:grid-cols-4">
           <a
-            href="#profil-karyawan"
+            href="#informasi-karyawan"
             className="rounded-2xl border border-[#1E453E]/10 bg-white px-4 py-3 text-sm font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
           >
-            Profil
+            Informasi
           </a>
           <a
             href="#dokumen-pribadi"
@@ -187,21 +186,55 @@ export default async function EmployeeDetailPage({
       </Card>
       <Card>
         <h2
-          id="profil-karyawan"
+          id="informasi-karyawan"
           className="scroll-mt-24 text-lg font-semibold text-[#1E453E]"
         >
-          Profil Karyawan
+          Informasi Karyawan
         </h2>
-        <div className="mt-4">
-          <EmployeeProfileEditor
-            id={employee.id}
-            name={employee.name}
-            email={employee.email}
-            phone={employee.phone}
-            address={employee.address}
-            dob={employee.dob ? employee.dob.toISOString().slice(0, 10) : null}
-            nik={employee.nik}
-          />
+        <p className="text-sm text-[#6c6f6e]">
+          Data profil hanya dapat diperbarui oleh karyawan.
+        </p>
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <div>
+            <p className="text-xs font-medium text-[#6c6f6e]">Nama lengkap</p>
+            <p className="text-sm font-semibold text-[#1E453E]">
+              {employee.name}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-[#6c6f6e]">Email</p>
+            <p className="text-sm font-semibold text-[#1E453E]">
+              {employee.email}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-[#6c6f6e]">NIK</p>
+            <p className="text-sm text-[#1E453E]">
+              {employee.nik || "Belum diisi"}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-[#6c6f6e]">No. HP</p>
+            <p className="text-sm text-[#1E453E]">
+              {employee.phone || "Belum diisi"}
+            </p>
+          </div>
+          <div className="md:col-span-2">
+            <p className="text-xs font-medium text-[#6c6f6e]">Alamat</p>
+            <p className="text-sm text-[#1E453E]">
+              {employee.address || "Belum diisi"}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-[#6c6f6e]">
+              Tanggal lahir
+            </p>
+            <p className="text-sm text-[#1E453E]">
+              {employee.dob
+                ? employee.dob.toLocaleDateString("id-ID")
+                : "Belum diisi"}
+            </p>
+          </div>
         </div>
       </Card>
 
@@ -212,7 +245,7 @@ export default async function EmployeeDetailPage({
         >
           Dokumen Pribadi
         </h2>
-        <div className="mt-4 space-y-4 stagger">
+        <div className="mt-4 space-y-4">
           {DOC_TYPES.map((doc) => {
             const docVersions = versionsByType[doc.type];
             const needsUpdate = statusByType.get(doc.type) || false;
@@ -300,7 +333,7 @@ export default async function EmployeeDetailPage({
             className="mt-4"
           />
         ) : (
-          <div className="mt-4 space-y-4 stagger">
+          <div className="mt-4 space-y-4">
             {assignments.map(
               (assignment: {
                 id: string;

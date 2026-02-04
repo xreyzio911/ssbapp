@@ -12,6 +12,7 @@ type TabsContextValue = {
   items: TabItem[];
   activeId: string;
   setActiveId: (id: string) => void;
+  basePath?: string;
 };
 
 const TabsContext = createContext<TabsContextValue | null>(null);
@@ -19,10 +20,12 @@ const TabsContext = createContext<TabsContextValue | null>(null);
 export function RoleTabsProvider({
   items,
   defaultId,
+  basePath,
   children,
 }: {
   items: TabItem[];
   defaultId: string;
+  basePath?: string;
   children: React.ReactNode;
 }) {
   const [activeId, setActiveId] = useState(defaultId);
@@ -43,8 +46,8 @@ export function RoleTabsProvider({
   }, [items]);
 
   const value = useMemo(
-    () => ({ items, activeId, setActiveId }),
-    [items, activeId]
+    () => ({ items, activeId, setActiveId, basePath }),
+    [items, activeId, basePath]
   );
 
   return <TabsContext.Provider value={value}>{children}</TabsContext.Provider>;
@@ -59,7 +62,7 @@ export function useRoleTabs() {
 }
 
 export function RoleTabsNav() {
-  const { items, activeId, setActiveId } = useRoleTabs();
+  const { items, activeId, setActiveId, basePath } = useRoleTabs();
 
   return (
     <nav className="inline-flex flex-wrap gap-2 rounded-full border border-white/70 bg-white/80 p-1 shadow-[0_10px_30px_rgba(30,69,62,0.12)]">
@@ -70,8 +73,13 @@ export function RoleTabsNav() {
             key={item.id}
             type="button"
             onClick={() => {
+              const target = `${basePath || ""}#${item.id}`;
+              if (basePath && window.location.pathname !== basePath) {
+                window.location.href = target;
+                return;
+              }
               setActiveId(item.id);
-              window.history.replaceState(null, "", `#${item.id}`);
+              window.history.replaceState(null, "", target);
             }}
             className={cn(
               "rounded-full px-4 py-2 text-sm font-medium transition",
