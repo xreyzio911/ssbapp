@@ -15,6 +15,7 @@ export function EmployeeList({ employees }: { employees: Employee[] }) {
   const [query, setQuery] = useState("");
   const [activeEmployee, setActiveEmployee] = useState<Employee | null>(null);
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
+  const dialogTitleId = "detail-cepat-title";
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
     return employees.filter(
@@ -119,22 +120,27 @@ export function EmployeeList({ employees }: { employees: Employee[] }) {
         />
       ) : null}
       {activeEmployee ? (
-        <div className="fixed inset-0 z-50 flex justify-end">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
-            className="absolute inset-0 bg-black/20 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/35 backdrop-blur-md"
             onClick={() => setActiveEmployee(null)}
           />
           <div
             role="dialog"
             aria-modal="true"
-            className="relative h-full w-full max-w-md overflow-y-auto bg-[#f7f7f2] p-6 shadow-[0_24px_60px_rgba(0,0,0,0.2)]"
+            aria-labelledby={dialogTitleId}
+            className="relative w-full max-w-lg overflow-y-auto rounded-3xl border border-white/70 bg-[#f7f7f2] p-6 shadow-[0_30px_80px_rgba(0,0,0,0.28)]"
+            style={{ maxHeight: "90vh" }}
           >
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.3em] text-[#1E453E]/60">
                   Detail Cepat
                 </p>
-                <h3 className="mt-2 text-2xl font-semibold text-[#1E453E]">
+                <h3
+                  id={dialogTitleId}
+                  className="mt-2 text-2xl font-semibold text-[#1E453E]"
+                >
                   {activeEmployee.name}
                 </h3>
                 <p className="text-sm text-[#6c6f6e]">
@@ -144,7 +150,7 @@ export function EmployeeList({ employees }: { employees: Employee[] }) {
               <button
                 type="button"
                 onClick={() => setActiveEmployee(null)}
-                className="rounded-full border border-[#1E453E]/20 px-3 py-1 text-xs font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
+                className="rounded-full border border-[#1E453E]/20 px-4 py-1 text-xs font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
               >
                 Tutup
               </button>
