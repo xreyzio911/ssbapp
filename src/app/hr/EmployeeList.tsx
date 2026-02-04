@@ -120,16 +120,16 @@ export function EmployeeList({ employees }: { employees: Employee[] }) {
         />
       ) : null}
       {activeEmployee ? (
-        <div className="fixed inset-0 z-50 grid place-items-center p-4">
+        <div className="fixed inset-0 z-50">
           <div
-            className="fixed inset-0 bg-white/35 backdrop-blur-sm"
+            className="absolute inset-0 bg-white/30 backdrop-blur-sm"
             onClick={() => setActiveEmployee(null)}
           />
           <div
             role="dialog"
             aria-modal="true"
             aria-labelledby={dialogTitleId}
-            className="relative w-full max-w-lg overflow-y-auto rounded-3xl border border-white/70 bg-[#f7f7f2] p-6 shadow-[0_30px_80px_rgba(0,0,0,0.28)]"
+            className="absolute left-1/2 top-1/2 w-[min(92vw,520px)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl border border-white/70 bg-[#f7f7f2] p-6 shadow-[0_30px_80px_rgba(0,0,0,0.28)]"
             style={{ maxHeight: "90vh" }}
           >
             <div className="flex items-start justify-between gap-4">
