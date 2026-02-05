@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
@@ -17,14 +17,19 @@ type Assignment = {
   signedAt?: string | null;
 };
 
-export function HrFileCard({ assignment }: { assignment: Assignment }) {
+export function HrFileCard({
+  assignment,
+  hasSignature,
+  signerName,
+}: {
+  assignment: Assignment;
+  hasSignature: boolean;
+  signerName: string;
+}) {
   const [status, setStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [fileBytes, setFileBytes] = useState<Uint8Array | null>(null);
-  const [showSign, setShowSign] = useState(false);
-  const [signerName, setSignerName] = useState("");
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const router = useRouter();
 
   async function openFile() {
@@ -47,108 +52,38 @@ export function HrFileCard({ assignment }: { assignment: Assignment }) {
     setLoading(false);
   }
 
-  function clearCanvas() {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  }
-
-  function startSignature() {
-    setShowSign(true);
-    setTimeout(() => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = "#1E453E";
-      ctx.lineCap = "round";
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }, 50);
-  }
-
-  function bindDrawing() {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    let drawing = false;
-
-    const getPoint = (event: PointerEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      return { x: event.clientX - rect.left, y: event.clientY - rect.top };
-    };
-
-    const onDown = (event: PointerEvent) => {
-      drawing = true;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      const { x, y } = getPoint(event);
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-    };
-
-    const onMove = (event: PointerEvent) => {
-      if (!drawing) return;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      const { x, y } = getPoint(event);
-      ctx.lineTo(x, y);
-      ctx.stroke();
-    };
-
-    const onUp = () => {
-      drawing = false;
-    };
-
-    canvas.addEventListener("pointerdown", onDown);
-    canvas.addEventListener("pointermove", onMove);
-    canvas.addEventListener("pointerup", onUp);
-    canvas.addEventListener("pointerleave", onUp);
-
-    return () => {
-      canvas.removeEventListener("pointerdown", onDown);
-      canvas.removeEventListener("pointermove", onMove);
-      canvas.removeEventListener("pointerup", onUp);
-      canvas.removeEventListener("pointerleave", onUp);
-    };
-  }
-
-  useEffect(() => {
-    if (!showSign) return;
-    const cleanup = bindDrawing();
-    return () => {
-      cleanup?.();
-    };
-  }, [showSign]);
-
   async function submitSignature() {
     if (!fileBytes) return;
-    if (!signerName.trim()) {
-      setStatus("Nama penanda tangan wajib diisi.");
+    if (!hasSignature) {
+      setStatus("Simpan tanda tangan di tab Profil terlebih dahulu.");
       return;
     }
     setStatus("Menyimpan tanda tangan...");
+    setLoading(true);
     try {
+      const sigRes = await fetch("/api/employee/signature");
+      if (!sigRes.ok) {
+        throw new Error("Tanda tangan belum tersedia.");
+      }
+      const sigBytes = new Uint8Array(await sigRes.arrayBuffer());
+      const sigMime = sigRes.headers.get("Content-Type") || "image/png";
+
       const pdfDoc = await PDFDocument.load(fileBytes);
       const pages = pdfDoc.getPages();
       const page = pages[pages.length - 1];
-      const pngData = canvasRef.current?.toDataURL("image/png");
-      if (!pngData) {
-        throw new Error("Tanda tangan kosong.");
-      }
-      const pngImage = await pdfDoc.embedPng(pngData);
       const { width, height } = page.getSize();
       const sigWidth = 180;
-      const sigHeight = 60;
-      page.drawImage(pngImage, {
-        x: width - sigWidth - 40,
+      const sigHeight = 70;
+      const signatureImage =
+        sigMime.includes("jpeg") || sigMime.includes("jpg")
+          ? await pdfDoc.embedJpg(sigBytes)
+          : await pdfDoc.embedPng(sigBytes);
+      const scaled = signatureImage.scaleToFit(sigWidth, sigHeight);
+      page.drawImage(signatureImage, {
+        x: width - scaled.width - 40,
         y: 80,
-        width: sigWidth,
-        height: sigHeight,
+        width: scaled.width,
+        height: scaled.height,
       });
       const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
       const timestamp = new Date().toLocaleString("id-ID");
@@ -183,11 +118,11 @@ export function HrFileCard({ assignment }: { assignment: Assignment }) {
       }
 
       setStatus("Dokumen berhasil ditandatangani.");
-      setShowSign(false);
       router.refresh();
     } catch (err: any) {
       setStatus(err.message || "Gagal menyimpan tanda tangan.");
     }
+    setLoading(false);
   }
 
   return (
@@ -222,55 +157,32 @@ export function HrFileCard({ assignment }: { assignment: Assignment }) {
             </a>
           ) : null}
           {assignment.fileType === "AGREEMENT" && assignment.status === "PENDING" ? (
-            <Button type="button" variant="secondary" onClick={startSignature} disabled={!fileBytes}>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={submitSignature}
+              disabled={!fileBytes || loading || !hasSignature}
+            >
               Tandatangani
             </Button>
           ) : null}
         </div>
+        {!hasSignature && assignment.fileType === "AGREEMENT" && assignment.status === "PENDING" ? (
+          <p className="text-xs text-[#6c6f6e]">
+            Simpan tanda tangan di tab Profil sebelum menandatangani.
+          </p>
+        ) : null}
         {status ? <p className="text-xs text-[#1E453E]">{status}</p> : null}
         {fileUrl ? (
           <div className="mt-2 overflow-hidden rounded-2xl border border-[#1E453E]/10">
-            <iframe title="Dokumen" src={fileUrl} className="h-64 w-full" />
+            <iframe
+              title="Dokumen"
+              src={fileUrl}
+              className="h-[520px] w-full md:h-[640px]"
+            />
           </div>
         ) : null}
       </div>
-
-      {showSign ? (
-        <div className="mt-4 rounded-2xl border border-[#1E453E]/10 bg-[#f7f7f2] p-4">
-          <p className="text-sm font-medium text-[#1E453E]">Tanda tangan</p>
-          <div className="mt-3">
-            <label className="mb-1 block text-xs font-medium text-[#1E453E]">
-              Nama penanda tangan
-            </label>
-            <input
-              type="text"
-              value={signerName}
-              onChange={(event) => setSignerName(event.target.value)}
-              className="w-full rounded-2xl border border-[#1E453E]/15 bg-white px-4 py-2 text-sm"
-            />
-          </div>
-          <div className="mt-3 rounded-2xl border border-dashed border-[#1E453E]/30 bg-white">
-            <canvas
-              ref={(node) => {
-                canvasRef.current = node;
-                if (node) {
-                  node.width = 420;
-                  node.height = 160;
-                }
-              }}
-              className="h-40 w-full touch-none"
-            />
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Button type="button" variant="ghost" onClick={clearCanvas}>
-              Bersihkan
-            </Button>
-            <Button type="button" variant="secondary" onClick={submitSignature}>
-              Simpan tanda tangan
-            </Button>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }

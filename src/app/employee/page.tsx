@@ -30,6 +30,10 @@ export default async function EmployeeDashboard() {
     address: user.address,
     dob: user.dob ? user.dob.toISOString().slice(0, 10) : null,
     nik: user.nik,
+    hasSignature: Boolean(user.signaturePath),
+    signatureUpdatedAt: user.signatureUpdatedAt
+      ? user.signatureUpdatedAt.toISOString()
+      : null,
   };
 
   const safeVersions = versions.map((version) => ({

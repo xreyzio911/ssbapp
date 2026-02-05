@@ -16,6 +16,8 @@ type UserProfile = {
   address?: string | null;
   dob?: string | null;
   nik?: string | null;
+  hasSignature: boolean;
+  signatureUpdatedAt?: string | null;
 };
 
 type Version = {
@@ -134,6 +136,8 @@ export function EmployeeTabsContent({
                   assignedAt: assignment.assignedAt,
                   signedAt: assignment.signedAt,
                 }}
+                hasSignature={user.hasSignature}
+                signerName={user.name}
               />
             ))}
           </div>
@@ -158,6 +162,8 @@ export function EmployeeTabsContent({
           address={user.address}
           dob={user.dob ?? null}
           nik={user.nik}
+          hasSignature={user.hasSignature}
+          signatureUpdatedAt={user.signatureUpdatedAt ?? null}
         />
       </Card>
     );
