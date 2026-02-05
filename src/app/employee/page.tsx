@@ -28,6 +28,7 @@ export default async function EmployeeDashboard() {
     username: user.username,
     email: user.email,
     position: user.position,
+    workLocation: user.workLocation,
     phone: user.phone,
     address: user.address,
     dob: user.dob ? user.dob.toISOString().slice(0, 10) : null,

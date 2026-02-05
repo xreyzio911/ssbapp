@@ -11,23 +11,83 @@ type Employee = {
   name: string;
   email: string | null;
   username: string;
+  position?: string | null;
+  workLocation?: string | null;
 };
 
 export function EmployeeList({ employees }: { employees: Employee[] }) {
   const [query, setQuery] = useState("");
+  const [positionFilter, setPositionFilter] = useState("ALL");
+  const [locationFilter, setLocationFilter] = useState("ALL");
+  const [sortBy, setSortBy] = useState<"NAME_ASC" | "NAME_DESC" | "POSITION" | "LOCATION">(
+    "NAME_ASC"
+  );
   const [activeEmployee, setActiveEmployee] = useState<Employee | null>(null);
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const dialogTitleId = "detail-cepat-title";
+  const positions = useMemo(() => {
+    const unique = new Set<string>();
+    employees.forEach((emp) => {
+      if (emp.position) {
+        unique.add(emp.position);
+      }
+    });
+    return Array.from(unique).sort((a, b) => a.localeCompare(b, "id"));
+  }, [employees]);
+
+  const locations = useMemo(() => {
+    const unique = new Set<string>();
+    employees.forEach((emp) => {
+      if (emp.workLocation) {
+        unique.add(emp.workLocation);
+      }
+    });
+    return Array.from(unique).sort((a, b) => a.localeCompare(b, "id"));
+  }, [employees]);
+
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
-    return employees.filter(
+    let list = employees.filter(
       (emp) =>
         emp.name.toLowerCase().includes(q) ||
         emp.username.toLowerCase().includes(q) ||
         (emp.email ? emp.email.toLowerCase().includes(q) : false)
     );
-  }, [query, employees]);
+    if (positionFilter !== "ALL") {
+      list = list.filter((emp) => emp.position === positionFilter);
+    }
+    if (locationFilter !== "ALL") {
+      list = list.filter((emp) => emp.workLocation === locationFilter);
+    }
+
+    const byName = (a: Employee, b: Employee) =>
+      a.name.localeCompare(b.name, "id", { sensitivity: "base" });
+    const byPosition = (a: Employee, b: Employee) => {
+      const ap = a.position || "zzzz";
+      const bp = b.position || "zzzz";
+      const cmp = ap.localeCompare(bp, "id", { sensitivity: "base" });
+      return cmp !== 0 ? cmp : byName(a, b);
+    };
+    const byLocation = (a: Employee, b: Employee) => {
+      const al = a.workLocation || "zzzz";
+      const bl = b.workLocation || "zzzz";
+      const cmp = al.localeCompare(bl, "id", { sensitivity: "base" });
+      return cmp !== 0 ? cmp : byName(a, b);
+    };
+
+    const sorted = [...list];
+    if (sortBy === "NAME_ASC") {
+      sorted.sort(byName);
+    } else if (sortBy === "NAME_DESC") {
+      sorted.sort((a, b) => byName(b, a));
+    } else if (sortBy === "POSITION") {
+      sorted.sort(byPosition);
+    } else if (sortBy === "LOCATION") {
+      sorted.sort(byLocation);
+    }
+    return sorted;
+  }, [query, employees, positionFilter, locationFilter, sortBy]);
 
   useEffect(() => {
     setMounted(true);
@@ -89,6 +149,51 @@ export function EmployeeList({ employees }: { employees: Employee[] }) {
           </button>
         ) : null}
       </div>
+      <div className="grid gap-3 md:grid-cols-3">
+        <div>
+          <label className="mb-1 block text-xs text-[#6c6f6e]">Filter jabatan</label>
+          <select
+            value={positionFilter}
+            onChange={(event) => setPositionFilter(event.target.value)}
+            className="w-full rounded-2xl border border-[#1E453E]/15 bg-white px-4 py-2 text-sm"
+          >
+            <option value="ALL">Semua jabatan</option>
+            {positions.map((pos) => (
+              <option key={pos} value={pos}>
+                {pos}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="mb-1 block text-xs text-[#6c6f6e]">Filter lokasi</label>
+          <select
+            value={locationFilter}
+            onChange={(event) => setLocationFilter(event.target.value)}
+            className="w-full rounded-2xl border border-[#1E453E]/15 bg-white px-4 py-2 text-sm"
+          >
+            <option value="ALL">Semua lokasi</option>
+            {locations.map((loc) => (
+              <option key={loc} value={loc}>
+                {loc}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="mb-1 block text-xs text-[#6c6f6e]">Urutkan</label>
+          <select
+            value={sortBy}
+            onChange={(event) => setSortBy(event.target.value as typeof sortBy)}
+            className="w-full rounded-2xl border border-[#1E453E]/15 bg-white px-4 py-2 text-sm"
+          >
+            <option value="NAME_ASC">Nama (A-Z)</option>
+            <option value="NAME_DESC">Nama (Z-A)</option>
+            <option value="POSITION">Jabatan</option>
+            <option value="LOCATION">Lokasi kerja</option>
+          </select>
+        </div>
+      </div>
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[#6c6f6e]">
         <span>
           Menampilkan {filtered.length} dari {employees.length} karyawan
@@ -98,9 +203,9 @@ export function EmployeeList({ employees }: { employees: Employee[] }) {
         {filtered.map((employee) => (
           <div
             key={employee.id}
-            className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#1E453E]/10 bg-white px-4 py-3 shadow-[0_10px_30px_rgba(30,69,62,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_40px_rgba(30,69,62,0.12)]"
+            className="grid gap-3 rounded-2xl border border-[#1E453E]/10 bg-white px-4 py-3 shadow-[0_10px_30px_rgba(30,69,62,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_40px_rgba(30,69,62,0.12)] md:grid-cols-[1fr_auto] md:items-start"
           >
-            <div>
+            <div className="min-w-0">
               <p className="text-sm font-semibold text-[#1E453E]">
                 {employee.name}
               </p>
@@ -108,10 +213,14 @@ export function EmployeeList({ employees }: { employees: Employee[] }) {
                 {employee.email ?? "Tanpa email"}
               </p>
               <p className="text-xs text-[#6c6f6e]">
+                {employee.position ?? "Belum ada jabatan"} -{" "}
+                {employee.workLocation ?? "Belum ada lokasi"}
+              </p>
+              <p className="text-xs text-[#6c6f6e]">
                 Username: {employee.username}
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 md:justify-end md:self-start">
               <button
                 type="button"
                 onClick={() => {

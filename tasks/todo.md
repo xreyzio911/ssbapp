@@ -1,4 +1,8 @@
 # TODO
+- [x] Add workLocation field (schema + migration) and surface in HR/employee views.
+- [x] Add position/workLocation sorting + filtering in HR list and batch upload selection.
+- [x] Add select-all / select-filtered buttons for batch upload employee selection.
+- [x] Run `npm run db:generate` and `npm test`.
 - [x] Add employee self-service change password form (verify: current password required, success resets form).
 - [x] Add Lighthouse mobile baseline script + deps (verify: script runs locally).
 - [x] Add upload/download timing script with cookie auth (verify: script runs with PERF_COOKIE).
@@ -52,6 +56,10 @@
 - [x] Use 303 redirect after POST /logout to avoid POST -> /login 405 (verify: logout returns to login).
 
 # Review
+- Added `workLocation` to User schema + migration and displayed it in HR and employee profile views.
+- Added sort/filter controls for position and work location in HR list and batch upload selection.
+- Added select-all/select-filtered buttons for batch employee selection.
+- Ran `npm run db:generate` and `npm test`.
 - Added employee self-service change password action + form in profile tab (requires current password, validates confirmation, resets on success).
 - Ran `npm test`.
 - Added `scripts/perf` baseline workflow (Lighthouse mobile + upload/download timing) and documented usage.

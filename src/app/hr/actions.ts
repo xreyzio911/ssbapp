@@ -19,6 +19,7 @@ const manualSchema = z.object({
   username: z.string().min(2),
   password: z.string().min(8),
   position: z.string().optional(),
+  workLocation: z.string().optional(),
 });
 
 export async function inviteEmployeeAction(
@@ -103,6 +104,7 @@ export async function createEmployeeManualAction(
     username: String(formData.get("username") || "").trim(),
     password: String(formData.get("password") || ""),
     position: String(formData.get("position") || "").trim() || undefined,
+    workLocation: String(formData.get("workLocation") || "").trim() || undefined,
   };
 
   const parsed = manualSchema.safeParse(payload);
@@ -131,6 +133,7 @@ export async function createEmployeeManualAction(
       email: null,
       passwordHash,
       position: parsed.data.position,
+      workLocation: parsed.data.workLocation,
     },
   });
 

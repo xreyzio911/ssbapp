@@ -14,6 +14,7 @@ type UserProfile = {
   name: string;
   username: string;
   position?: string | null;
+  workLocation?: string | null;
   phone?: string | null;
   address?: string | null;
   dob?: string | null;
@@ -162,6 +163,7 @@ export function EmployeeTabsContent({
           name={user.name}
           username={user.username}
           position={user.position}
+          workLocation={user.workLocation}
           phone={user.phone}
           address={user.address}
           dob={user.dob ?? null}

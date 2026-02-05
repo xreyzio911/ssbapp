@@ -9,6 +9,8 @@ type Employee = {
   name: string;
   email: string | null;
   username: string;
+  position?: string | null;
+  workLocation?: string | null;
 };
 
 type UploadMode = "SHARED" | "SPECIFIC";
@@ -38,17 +40,75 @@ export function BatchUploadForm({ employees }: { employees: Employee[] }) {
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
+  const [positionFilter, setPositionFilter] = useState("ALL");
+  const [locationFilter, setLocationFilter] = useState("ALL");
+  const [sortBy, setSortBy] = useState<
+    "NAME_ASC" | "NAME_DESC" | "POSITION" | "LOCATION"
+  >("NAME_ASC");
   const [fileInputKey, setFileInputKey] = useState(0);
+
+  const positions = useMemo(() => {
+    const unique = new Set<string>();
+    employees.forEach((emp) => {
+      if (emp.position) {
+        unique.add(emp.position);
+      }
+    });
+    return Array.from(unique).sort((a, b) => a.localeCompare(b, "id"));
+  }, [employees]);
+
+  const locations = useMemo(() => {
+    const unique = new Set<string>();
+    employees.forEach((emp) => {
+      if (emp.workLocation) {
+        unique.add(emp.workLocation);
+      }
+    });
+    return Array.from(unique).sort((a, b) => a.localeCompare(b, "id"));
+  }, [employees]);
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
-    return employees.filter(
+    let list = employees.filter(
       (emp) =>
         emp.name.toLowerCase().includes(q) ||
         emp.username.toLowerCase().includes(q) ||
         (emp.email ? emp.email.toLowerCase().includes(q) : false)
     );
-  }, [employees, query]);
+    if (positionFilter !== "ALL") {
+      list = list.filter((emp) => emp.position === positionFilter);
+    }
+    if (locationFilter !== "ALL") {
+      list = list.filter((emp) => emp.workLocation === locationFilter);
+    }
+
+    const byName = (a: Employee, b: Employee) =>
+      a.name.localeCompare(b.name, "id", { sensitivity: "base" });
+    const byPosition = (a: Employee, b: Employee) => {
+      const ap = a.position || "zzzz";
+      const bp = b.position || "zzzz";
+      const cmp = ap.localeCompare(bp, "id", { sensitivity: "base" });
+      return cmp !== 0 ? cmp : byName(a, b);
+    };
+    const byLocation = (a: Employee, b: Employee) => {
+      const al = a.workLocation || "zzzz";
+      const bl = b.workLocation || "zzzz";
+      const cmp = al.localeCompare(bl, "id", { sensitivity: "base" });
+      return cmp !== 0 ? cmp : byName(a, b);
+    };
+
+    const sorted = [...list];
+    if (sortBy === "NAME_ASC") {
+      sorted.sort(byName);
+    } else if (sortBy === "NAME_DESC") {
+      sorted.sort((a, b) => byName(b, a));
+    } else if (sortBy === "POSITION") {
+      sorted.sort(byPosition);
+    } else if (sortBy === "LOCATION") {
+      sorted.sort(byLocation);
+    }
+    return sorted;
+  }, [employees, query, positionFilter, locationFilter, sortBy]);
 
   function handleModeChange(nextMode: UploadMode) {
     setMode(nextMode);
@@ -57,6 +117,9 @@ export function BatchUploadForm({ employees }: { employees: Employee[] }) {
     setSharedFile(null);
     setSpecificFiles([]);
     setQuery("");
+    setPositionFilter("ALL");
+    setLocationFilter("ALL");
+    setSortBy("NAME_ASC");
     setMessage(null);
     setFileInputKey((prev) => prev + 1);
   }
@@ -65,6 +128,18 @@ export function BatchUploadForm({ employees }: { employees: Employee[] }) {
     setSelected((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
+  }
+
+  function selectAllEmployees() {
+    setSelected(employees.map((emp) => emp.id));
+  }
+
+  function selectFilteredEmployees() {
+    setSelected(filtered.map((emp) => emp.id));
+  }
+
+  function clearSelection() {
+    setSelected([]);
   }
 
   function handleSharedFileChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -277,6 +352,80 @@ export function BatchUploadForm({ employees }: { employees: Employee[] }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
+          <div className="mt-3 grid gap-3 md:grid-cols-3">
+            <div>
+              <label className="mb-1 block text-xs text-[#6c6f6e]">
+                Filter jabatan
+              </label>
+              <select
+                value={positionFilter}
+                onChange={(e) => setPositionFilter(e.target.value)}
+                className="w-full rounded-2xl border border-[#1E453E]/15 bg-white px-4 py-2 text-sm"
+              >
+                <option value="ALL">Semua jabatan</option>
+                {positions.map((pos) => (
+                  <option key={pos} value={pos}>
+                    {pos}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-[#6c6f6e]">
+                Filter lokasi
+              </label>
+              <select
+                value={locationFilter}
+                onChange={(e) => setLocationFilter(e.target.value)}
+                className="w-full rounded-2xl border border-[#1E453E]/15 bg-white px-4 py-2 text-sm"
+              >
+                <option value="ALL">Semua lokasi</option>
+                {locations.map((loc) => (
+                  <option key={loc} value={loc}>
+                    {loc}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-[#6c6f6e]">Urutkan</label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                className="w-full rounded-2xl border border-[#1E453E]/15 bg-white px-4 py-2 text-sm"
+              >
+                <option value="NAME_ASC">Nama (A-Z)</option>
+                <option value="NAME_DESC">Nama (Z-A)</option>
+                <option value="POSITION">Jabatan</option>
+                <option value="LOCATION">Lokasi kerja</option>
+              </select>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={selectAllEmployees}
+              className="rounded-full border border-[#1E453E]/20 px-4 py-2 text-xs font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
+            >
+              Pilih semua
+            </button>
+            <button
+              type="button"
+              onClick={selectFilteredEmployees}
+              className="rounded-full border border-[#1E453E]/20 px-4 py-2 text-xs font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
+            >
+              Pilih hasil filter
+            </button>
+            {selected.length > 0 ? (
+              <button
+                type="button"
+                onClick={clearSelection}
+                className="rounded-full border border-[#1E453E]/20 px-4 py-2 text-xs font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
+              >
+                Bersihkan
+              </button>
+            ) : null}
+          </div>
           <div className="mt-3 max-h-56 space-y-2 overflow-auto rounded-2xl border border-[#1E453E]/10 bg-white p-3">
             {filtered.map((emp) => (
               <label key={emp.id} className="flex items-center gap-2 text-sm">
@@ -286,7 +435,9 @@ export function BatchUploadForm({ employees }: { employees: Employee[] }) {
                   onChange={() => toggleEmployee(emp.id)}
                 />
                 <span>
-                  {emp.name} · {emp.email ?? "Tanpa email"} · {emp.username}
+                  {emp.name} - {emp.email ?? "Tanpa email"} - {emp.username}
+                  {emp.position ? ` - ${emp.position}` : ""}
+                  {emp.workLocation ? ` - ${emp.workLocation}` : ""}
                 </span>
               </label>
             ))}
@@ -344,7 +495,9 @@ export function BatchUploadForm({ employees }: { employees: Employee[] }) {
                       <option value="">Pilih karyawan</option>
                       {employees.map((emp) => (
                         <option key={emp.id} value={emp.id}>
-                          {emp.name} · {emp.email ?? "Tanpa email"} · {emp.username}
+                          {emp.name} - {emp.email ?? "Tanpa email"} - {emp.username}
+                          {emp.position ? ` - ${emp.position}` : ""}
+                          {emp.workLocation ? ` - ${emp.workLocation}` : ""}
                         </option>
                       ))}
                     </select>

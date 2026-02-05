@@ -11,6 +11,7 @@ type Props = {
   username: string;
   email: string | null;
   position?: string | null;
+  workLocation?: string | null;
   phone?: string | null;
   address?: string | null;
   dob?: string | null;
@@ -82,16 +83,22 @@ export function EmployeeProfileForm(props: Props) {
           </label>
           <Input value={props.username} disabled />
         </div>
-        <div>
-          <label className="mb-2 block text-sm font-medium text-[#1E453E]">
-            Jabatan
-          </label>
-          <Input value={props.position ?? ""} placeholder="Belum ada jabatan" disabled />
-        </div>
-        <div>
-          <label className="mb-2 block text-sm font-medium text-[#1E453E]">
-            Email (opsional)
-          </label>
+      <div>
+        <label className="mb-2 block text-sm font-medium text-[#1E453E]">
+          Jabatan
+        </label>
+        <Input value={props.position ?? ""} placeholder="Belum ada jabatan" disabled />
+      </div>
+      <div>
+        <label className="mb-2 block text-sm font-medium text-[#1E453E]">
+          Lokasi kerja
+        </label>
+        <Input value={props.workLocation ?? ""} placeholder="Belum ada lokasi" disabled />
+      </div>
+      <div>
+        <label className="mb-2 block text-sm font-medium text-[#1E453E]">
+          Email (opsional)
+        </label>
           <Input value={props.email ?? ""} placeholder="Belum ada email" disabled />
         </div>
         <div>

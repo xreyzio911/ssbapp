@@ -17,6 +17,7 @@ export function CreateEmployeeForm() {
         required
       />
       <Input name="position" placeholder="Jabatan (opsional)" />
+      <Input name="workLocation" placeholder="Lokasi kerja (opsional)" />
       <Input
         name="password"
         type="password"

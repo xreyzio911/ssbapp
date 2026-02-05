@@ -258,6 +258,12 @@ export default async function EmployeeDetailPage({
             </p>
           </div>
           <div>
+            <p className="text-xs font-medium text-[#6c6f6e]">Lokasi kerja</p>
+            <p className="text-sm text-[#1E453E]">
+              {employee.workLocation || "Belum diisi"}
+            </p>
+          </div>
+          <div>
             <p className="text-xs font-medium text-[#6c6f6e]">NIK</p>
             <p className="text-sm text-[#1E453E]">
               {employee.nik || "Belum diisi"}
