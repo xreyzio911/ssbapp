@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,7 @@ export function DocumentUploadCard({
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const router = useRouter();
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   async function onUpload(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -68,18 +69,22 @@ export function DocumentUploadCard({
         </Badge>
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <label className="cursor-pointer">
-          <input
-            type="file"
-            className="hidden"
-            onChange={onUpload}
-            disabled={loading}
-            accept="application/pdf,image/jpeg,image/png"
-          />
-          <Button type="button" variant="secondary" disabled={loading}>
-            {loading ? "Mengunggah..." : "Unggah / Ganti"}
-          </Button>
-        </label>
+        <input
+          ref={inputRef}
+          type="file"
+          className="hidden"
+          onChange={onUpload}
+          disabled={loading}
+          accept="application/pdf,image/jpeg,image/png"
+        />
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={loading}
+          onClick={() => inputRef.current?.click()}
+        >
+          {loading ? "Mengunggah..." : "Unggah / Ganti"}
+        </Button>
         {message ? (
           <span className="text-xs text-[#1E453E]">{message}</span>
         ) : null}
