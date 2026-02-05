@@ -305,7 +305,7 @@ export default async function EmployeeDetailPage({
                         </span>
                         <Link
                           className="text-[#1E453E] underline"
-                          href={`/api/hr/documents/${version.id}/download`}
+                          href={`/api/hr/documents/${version.id}`}
                         >
                           Unduh
                         </Link>
@@ -370,14 +370,14 @@ export default async function EmployeeDetailPage({
                 <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
                   <Link
                     className="text-[#1E453E] underline"
-                    href={`/api/hr/assignments/${assignment.id}/download`}
+                    href={`/api/hr/assignments/${assignment.id}`}
                   >
                     Unduh file
                   </Link>
                   {assignment.signedFilePath ? (
                     <Link
                       className="text-[#1E453E] underline"
-                      href={`/api/hr/assignments/${assignment.id}/download?signed=1`}
+                      href={`/api/hr/assignments/${assignment.id}?signed=1`}
                     >
                       Unduh file signed
                     </Link>
