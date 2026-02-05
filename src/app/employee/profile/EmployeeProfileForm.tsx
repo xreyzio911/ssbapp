@@ -1,8 +1,8 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { updateProfileAction } from "./actions";
+import { changePasswordAction, updateProfileAction } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -21,6 +21,8 @@ type Props = {
 
 export function EmployeeProfileForm(props: Props) {
   const [state, action] = useActionState(updateProfileAction, null);
+  const [passwordState, passwordAction] = useActionState(changePasswordAction, null);
+  const passwordFormRef = useRef<HTMLFormElement | null>(null);
   const router = useRouter();
   const [hasSignature, setHasSignature] = useState(props.hasSignature);
   const [signatureMessage, setSignatureMessage] = useState<string | null>(null);
@@ -29,6 +31,12 @@ export function EmployeeProfileForm(props: Props) {
     props.signatureUpdatedAt || ""
   );
   const signatureInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (passwordState?.ok && passwordFormRef.current) {
+      passwordFormRef.current.reset();
+    }
+  }, [passwordState]);
 
   async function onUploadSignature(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -60,120 +68,161 @@ export function EmployeeProfileForm(props: Props) {
   }
 
   return (
-    <form action={action} className="space-y-4">
-      <div>
-        <label className="mb-2 block text-sm font-medium text-[#1E453E]">
-          Nama lengkap
-        </label>
-        <Input value={props.name} disabled />
-      </div>
-      <div>
-        <label className="mb-2 block text-sm font-medium text-[#1E453E]">
-          Username
-        </label>
-        <Input value={props.username} disabled />
-      </div>
-      <div>
-        <label className="mb-2 block text-sm font-medium text-[#1E453E]">
-          Jabatan
-        </label>
-        <Input value={props.position ?? ""} placeholder="Belum ada jabatan" disabled />
-      </div>
-      <div>
-        <label className="mb-2 block text-sm font-medium text-[#1E453E]">
-          Email (opsional)
-        </label>
-        <Input value={props.email ?? ""} placeholder="Belum ada email" disabled />
-      </div>
-      <div>
-        <label className="mb-2 block text-sm font-medium text-[#1E453E]">
-          NIK
-        </label>
-        <Input name="nik" defaultValue={props.nik ?? ""} />
-      </div>
-      <div className="grid gap-4 md:grid-cols-2">
+    <div className="space-y-6">
+      <form action={action} className="space-y-4">
         <div>
           <label className="mb-2 block text-sm font-medium text-[#1E453E]">
-            No. HP
+            Nama lengkap
           </label>
-          <Input name="phone" defaultValue={props.phone ?? ""} />
+          <Input value={props.name} disabled />
         </div>
         <div>
           <label className="mb-2 block text-sm font-medium text-[#1E453E]">
-            Tanggal lahir
+            Username
           </label>
-          <Input name="dob" type="date" defaultValue={props.dob ?? ""} />
+          <Input value={props.username} disabled />
         </div>
-      </div>
-      <div>
-        <label className="mb-2 block text-sm font-medium text-[#1E453E]">
-          Alamat
-        </label>
-        <Input name="address" defaultValue={props.address ?? ""} />
-      </div>
-      <div className="rounded-2xl border border-[#1E453E]/10 bg-white p-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <label className="mb-2 block text-sm font-medium text-[#1E453E]">
+            Jabatan
+          </label>
+          <Input value={props.position ?? ""} placeholder="Belum ada jabatan" disabled />
+        </div>
+        <div>
+          <label className="mb-2 block text-sm font-medium text-[#1E453E]">
+            Email (opsional)
+          </label>
+          <Input value={props.email ?? ""} placeholder="Belum ada email" disabled />
+        </div>
+        <div>
+          <label className="mb-2 block text-sm font-medium text-[#1E453E]">
+            NIK
+          </label>
+          <Input name="nik" defaultValue={props.nik ?? ""} />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <p className="text-sm font-semibold text-[#1E453E]">Tanda tangan</p>
-            <p className="text-xs text-[#6c6f6e]">
-              Unggah satu kali untuk tanda tangan otomatis pada perjanjian.
-            </p>
+            <label className="mb-2 block text-sm font-medium text-[#1E453E]">
+              No. HP
+            </label>
+            <Input name="phone" defaultValue={props.phone ?? ""} />
           </div>
-          {hasSignature ? (
-            <span className="rounded-full border border-[#1E453E]/15 bg-white px-3 py-1 text-xs font-medium text-[#1E453E]">
-              Tersimpan
-            </span>
-          ) : (
-            <span className="rounded-full border border-[#D4AF37]/40 bg-[#fff7e1] px-3 py-1 text-xs font-medium text-[#1E453E]">
-              Belum ada
-            </span>
-          )}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-[#1E453E]">
+              Tanggal lahir
+            </label>
+            <Input name="dob" type="date" defaultValue={props.dob ?? ""} />
+          </div>
         </div>
-        <div className="mt-4 grid gap-4 md:grid-cols-[200px_1fr]">
-          <div className="rounded-2xl border border-[#1E453E]/10 bg-[#f7f7f2] p-3 text-center">
-            {hasSignature ? (
-              <img
-                alt="Preview tanda tangan"
-                src={`/api/employee/signature?ts=${signatureVersion}`}
-                className="mx-auto h-24 w-full object-contain"
-              />
-            ) : (
+        <div>
+          <label className="mb-2 block text-sm font-medium text-[#1E453E]">
+            Alamat
+          </label>
+          <Input name="address" defaultValue={props.address ?? ""} />
+        </div>
+        <div className="rounded-2xl border border-[#1E453E]/10 bg-white p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-[#1E453E]">Tanda tangan</p>
               <p className="text-xs text-[#6c6f6e]">
-                Belum ada tanda tangan
+                Unggah satu kali untuk tanda tangan otomatis pada perjanjian.
               </p>
+            </div>
+            {hasSignature ? (
+              <span className="rounded-full border border-[#1E453E]/15 bg-white px-3 py-1 text-xs font-medium text-[#1E453E]">
+                Tersimpan
+              </span>
+            ) : (
+              <span className="rounded-full border border-[#D4AF37]/40 bg-[#fff7e1] px-3 py-1 text-xs font-medium text-[#1E453E]">
+                Belum ada
+              </span>
             )}
           </div>
-          <div className="space-y-3">
-            <input
-              ref={signatureInputRef}
-              type="file"
-              accept="image/png,image/jpeg"
-              className="hidden"
-              onChange={onUploadSignature}
-              disabled={signatureUploading}
-            />
-            <Button
-              type="button"
-              variant="secondary"
-              disabled={signatureUploading}
-              onClick={() => signatureInputRef.current?.click()}
-            >
-              {signatureUploading ? "Mengunggah..." : "Unggah tanda tangan"}
-            </Button>
-            <p className="text-xs text-[#6c6f6e]">
-              Format PNG/JPG, maksimal 2MB.
-            </p>
-            {signatureMessage ? (
-              <p className="text-xs text-[#1E453E]">{signatureMessage}</p>
-            ) : null}
+          <div className="mt-4 grid gap-4 md:grid-cols-[200px_1fr]">
+            <div className="rounded-2xl border border-[#1E453E]/10 bg-[#f7f7f2] p-3 text-center">
+              {hasSignature ? (
+                <img
+                  alt="Preview tanda tangan"
+                  src={`/api/employee/signature?ts=${signatureVersion}`}
+                  className="mx-auto h-24 w-full object-contain"
+                />
+              ) : (
+                <p className="text-xs text-[#6c6f6e]">
+                  Belum ada tanda tangan
+                </p>
+              )}
+            </div>
+            <div className="space-y-3">
+              <input
+                ref={signatureInputRef}
+                type="file"
+                accept="image/png,image/jpeg"
+                className="hidden"
+                onChange={onUploadSignature}
+                disabled={signatureUploading}
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={signatureUploading}
+                onClick={() => signatureInputRef.current?.click()}
+              >
+                {signatureUploading ? "Mengunggah..." : "Unggah tanda tangan"}
+              </Button>
+              <p className="text-xs text-[#6c6f6e]">
+                Format PNG/JPG, maksimal 2MB.
+              </p>
+              {signatureMessage ? (
+                <p className="text-xs text-[#1E453E]">{signatureMessage}</p>
+              ) : null}
+            </div>
           </div>
         </div>
-      </div>
-      {state?.message ? (
-        <p className="text-sm text-[#1E453E]">{state.message}</p>
-      ) : null}
-      <Button type="submit">Simpan profil</Button>
-    </form>
+        {state?.message ? (
+          <p className="text-sm text-[#1E453E]">{state.message}</p>
+        ) : null}
+        <Button type="submit">Simpan profil</Button>
+      </form>
+
+      <form
+        ref={passwordFormRef}
+        action={passwordAction}
+        className="rounded-2xl border border-[#1E453E]/10 bg-white p-4 space-y-4"
+      >
+        <div>
+          <p className="text-sm font-semibold text-[#1E453E]">
+            Ubah kata sandi
+          </p>
+          <p className="text-xs text-[#6c6f6e]">
+            Minimal 8 karakter. Pastikan kata sandi baru berbeda dari sebelumnya.
+          </p>
+        </div>
+        <div>
+          <label className="mb-2 block text-sm font-medium text-[#1E453E]">
+            Kata sandi lama
+          </label>
+          <Input name="currentPassword" type="password" required />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-[#1E453E]">
+              Kata sandi baru
+            </label>
+            <Input name="newPassword" type="password" required minLength={8} />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-[#1E453E]">
+              Konfirmasi kata sandi baru
+            </label>
+            <Input name="confirmPassword" type="password" required minLength={8} />
+          </div>
+        </div>
+        {passwordState?.message ? (
+          <p className="text-sm text-[#1E453E]">{passwordState.message}</p>
+        ) : null}
+        <Button type="submit">Perbarui kata sandi</Button>
+      </form>
+    </div>
   );
 }
 

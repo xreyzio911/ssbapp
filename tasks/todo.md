@@ -1,4 +1,5 @@
 # TODO
+- [x] Add employee self-service change password form (verify: current password required, success resets form).
 - [x] Add Lighthouse mobile baseline script + deps (verify: script runs locally).
 - [x] Add upload/download timing script with cookie auth (verify: script runs with PERF_COOKIE).
 - [x] Wire npm scripts + docs; run tests (verify: `npm test`).
@@ -51,6 +52,8 @@
 - [x] Use 303 redirect after POST /logout to avoid POST -> /login 405 (verify: logout returns to login).
 
 # Review
+- Added employee self-service change password action + form in profile tab (requires current password, validates confirmation, resets on success).
+- Ran `npm test`.
 - Added `scripts/perf` baseline workflow (Lighthouse mobile + upload/download timing) and documented usage.
 - Added `perf:lighthouse` and `perf:upload` scripts plus deps (`lighthouse`, `chrome-launcher`).
 - Ran `npm install` and `npm test`.
