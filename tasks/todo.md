@@ -1,4 +1,6 @@
 # TODO
+- [ ] Investigate why invite token links fail in production (verify: invite link resolves and allows account creation).
+- [ ] Provide a safe manual path to add an employee record for testing (verify: employee exists and can log in or receive invite).
 - [x] Remove HR-file password UI and copy; open documents directly after login (verify: HR docs open without password prompt).
 - [x] Serve decrypted HR files to employees and remove password-related HR reissue UI (verify: employee blob endpoint returns plaintext, HR detail page has no password reissue).
 - [x] Update HR-file notification emails to remove password content (verify: upload email template contains no password text).
@@ -52,3 +54,5 @@
 - Updated employee blob endpoint to decrypt server-side and return plaintext content.
 - Removed password reissue UI/action and updated HR-file email templates to remove password text.
 - Re-verified with `npm test`.
+- Ran `npm test`.
+- Invite page now awaits `searchParams` before reading the token to avoid false "token missing" errors.

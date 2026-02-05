@@ -178,7 +178,7 @@ export function HrFileCard({
             <iframe
               title="Dokumen"
               src={fileUrl}
-              className="h-[520px] w-full md:h-[640px]"
+              className="w-full aspect-[1/1.414] min-h-[720px] md:min-h-[960px] lg:min-h-[1120px]"
             />
           </div>
         ) : null}

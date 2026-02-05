@@ -6,9 +6,9 @@ import { InviteForm } from "./InviteForm";
 export default async function InvitePage({
   searchParams,
 }: {
-  searchParams: { token?: string };
+  searchParams: Promise<{ token?: string }>;
 }) {
-  const token = searchParams.token;
+  const { token } = await searchParams;
   if (!token) {
     return (
       <Card>
