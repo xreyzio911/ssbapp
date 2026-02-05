@@ -12,3 +12,4 @@
 - Fixed overlays can be scoped by ancestors with `backdrop-filter`/`transform`; render modals via a portal to `document.body` to guarantee full-viewport centering and blur coverage (verify visually).
 - In Next 16, dynamic `params` can be a Promise; `await params` in page components to avoid undefined route IDs and Prisma errors (verify by opening detail pages).
 - In Next 16, `searchParams` can be a Promise; `await searchParams` before reading tokens or query params to avoid false "token missing" errors (verify by opening invite/reset links).
+- When scoping performance or workflow changes, review current app flows in code first and avoid asking questions already answered by the repo (verify by reading relevant API/UI files before proposing plans).

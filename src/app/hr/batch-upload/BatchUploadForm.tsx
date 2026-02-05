@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 type Employee = {
   id: string;
   name: string;
-  email: string;
+  email: string | null;
+  username: string;
 };
 
 type UploadMode = "SHARED" | "SPECIFIC";
@@ -18,6 +19,8 @@ type SpecificFile = {
   title: string;
   employeeId: string;
 };
+
+const MAX_SIZE = 10 * 1024 * 1024;
 
 function stripExtension(name: string) {
   return name.replace(/\.[^/.]+$/, "");
@@ -41,7 +44,9 @@ export function BatchUploadForm({ employees }: { employees: Employee[] }) {
     const q = query.toLowerCase();
     return employees.filter(
       (emp) =>
-        emp.name.toLowerCase().includes(q) || emp.email.toLowerCase().includes(q)
+        emp.name.toLowerCase().includes(q) ||
+        emp.username.toLowerCase().includes(q) ||
+        (emp.email ? emp.email.toLowerCase().includes(q) : false)
     );
   }, [employees, query]);
 
@@ -64,6 +69,13 @@ export function BatchUploadForm({ employees }: { employees: Employee[] }) {
 
   function handleSharedFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] || null;
+    if (file && file.size > MAX_SIZE) {
+      setMessage("Ukuran file maksimal 10MB.");
+      setSharedFile(null);
+      setFileInputKey((prev) => prev + 1);
+      return;
+    }
+    setMessage(null);
     setSharedFile(file);
   }
 
@@ -71,7 +83,24 @@ export function BatchUploadForm({ employees }: { employees: Employee[] }) {
     event: React.ChangeEvent<HTMLInputElement>
   ) {
     const files = Array.from(event.target.files ?? []);
-    const mapped = files.map((file, index) => ({
+    const oversized = files.filter((file) => file.size > MAX_SIZE);
+    if (oversized.length > 0) {
+      const names = oversized.map((file) => file.name).join(", ");
+      setMessage(
+        oversized.length === files.length
+          ? "Semua file melebihi 10MB."
+          : `File melebihi 10MB tidak akan diunggah: ${names}`
+      );
+    } else {
+      setMessage(null);
+    }
+    const validFiles = files.filter((file) => file.size <= MAX_SIZE);
+    if (validFiles.length === 0) {
+      setSpecificFiles([]);
+      setFileInputKey((prev) => prev + 1);
+      return;
+    }
+    const mapped = validFiles.map((file, index) => ({
       id: `${file.name}-${file.lastModified}-${index}`,
       file,
       title: stripExtension(file.name) || file.name,
@@ -104,6 +133,10 @@ export function BatchUploadForm({ employees }: { employees: Employee[] }) {
         setMessage("File belum dipilih.");
         return;
       }
+      if (sharedFile.size > MAX_SIZE) {
+        setMessage("Ukuran file maksimal 10MB.");
+        return;
+      }
       if (selected.length === 0) {
         setMessage("Pilih minimal satu karyawan.");
         return;
@@ -115,6 +148,10 @@ export function BatchUploadForm({ employees }: { employees: Employee[] }) {
     } else {
       if (specificFiles.length === 0) {
         setMessage("Pilih minimal satu file.");
+        return;
+      }
+      if (specificFiles.some((item) => item.file.size > MAX_SIZE)) {
+        setMessage("Ukuran file maksimal 10MB.");
         return;
       }
       const missingEmployee = specificFiles.find((item) => !item.employeeId);
@@ -225,7 +262,9 @@ export function BatchUploadForm({ employees }: { employees: Employee[] }) {
             onChange={handleSpecificFilesChange}
           />
         )}
-        <p className="mt-1 text-xs text-[#6c6f6e]">Perjanjian wajib PDF.</p>
+        <p className="mt-1 text-xs text-[#6c6f6e]">
+          Maksimal 10MB. Perjanjian wajib PDF.
+        </p>
       </div>
 
       {mode === "SHARED" ? (
@@ -247,7 +286,7 @@ export function BatchUploadForm({ employees }: { employees: Employee[] }) {
                   onChange={() => toggleEmployee(emp.id)}
                 />
                 <span>
-                  {emp.name} · {emp.email}
+                  {emp.name} · {emp.email ?? "Tanpa email"} · {emp.username}
                 </span>
               </label>
             ))}
@@ -305,7 +344,7 @@ export function BatchUploadForm({ employees }: { employees: Employee[] }) {
                       <option value="">Pilih karyawan</option>
                       {employees.map((emp) => (
                         <option key={emp.id} value={emp.id}>
-                          {emp.name} · {emp.email}
+                          {emp.name} · {emp.email ?? "Tanpa email"} · {emp.username}
                         </option>
                       ))}
                     </select>

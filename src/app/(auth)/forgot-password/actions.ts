@@ -25,7 +25,7 @@ export async function forgotPasswordAction(
     where: { email: parsed.data.email },
   });
 
-  if (user) {
+  if (user?.email) {
     const token = generateToken(32);
     const tokenHash = hashToken(token);
     const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24);
@@ -38,17 +38,36 @@ export async function forgotPasswordAction(
       },
     });
 
-    const appUrl = process.env.APP_URL || "http://localhost:3000";
+    const appUrl = (process.env.APP_URL || "http://localhost:3000").replace(/\/$/, "");
     const link = `${appUrl}/reset-password?token=${token}`;
+    const loginUrl = `${appUrl}/login`;
 
     await sendEmail({
       to: user.email,
       subject: "Atur ulang kata sandi",
       html: `
-        <p>Halo ${user.name},</p>
-        <p>Klik tautan berikut untuk mengatur ulang kata sandi:</p>
-        <p><a href="${link}">${link}</a></p>
-        <p>Tautan ini berlaku 24 jam.</p>
+        <div style="font-family: Arial, sans-serif; color: #1E453E; line-height: 1.6;">
+          <p>Halo ${user.name},</p>
+          <p>Kami menerima permintaan untuk mengatur ulang kata sandi akun Anda.</p>
+          <p>Gunakan tombol berikut untuk melanjutkan:</p>
+          <p>
+            <a href="${link}" style="display: inline-block; padding: 10px 18px; border-radius: 999px; background: #1E453E; color: #ffffff; text-decoration: none; font-weight: 600;">
+              Atur Ulang Kata Sandi
+            </a>
+          </p>
+          <p style="font-size: 12px; color: #6c6f6e;">
+            Jika tombol tidak berfungsi, buka tautan berikut:
+            <a href="${link}" style="color: #1E453E;">${link}</a>
+          </p>
+          <p style="font-size: 12px; color: #6c6f6e;">Tautan ini berlaku 24 jam.</p>
+          <p style="font-size: 12px; color: #6c6f6e;">
+            Jika Anda tidak meminta reset, abaikan email ini dan kata sandi Anda tidak akan berubah.
+          </p>
+          <p style="font-size: 12px; color: #6c6f6e;">
+            Login kembali di:
+            <a href="${loginUrl}" style="color: #1E453E;">${loginUrl}</a>
+          </p>
+        </div>
       `,
     });
   }

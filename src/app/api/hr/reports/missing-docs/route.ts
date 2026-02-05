@@ -35,7 +35,7 @@ export async function GET() {
       );
       return [
         `"${emp.name}"`,
-        `"${emp.email}"`,
+        `"${emp.email ?? ""}"`,
         `"${missing.join("; ")}"`,
       ].join(",");
     }),

@@ -8,7 +8,7 @@ import { prisma } from "@/lib/db";
 import { logAudit } from "@/lib/audit";
 import path from "path";
 
-const MAX_SIZE = 15 * 1024 * 1024;
+const MAX_SIZE = 10 * 1024 * 1024;
 const ALLOWED_MIME = ["application/pdf", "image/jpeg", "image/png"];
 
 export async function POST(req: Request) {
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "File tidak ditemukan." }, { status: 400 });
   }
   if (file.size > MAX_SIZE) {
-    return NextResponse.json({ error: "Ukuran file melebihi 15MB." }, { status: 400 });
+    return NextResponse.json({ error: "Ukuran file melebihi 10MB." }, { status: 400 });
   }
   if (!ALLOWED_MIME.includes(file.type)) {
     return NextResponse.json({ error: "Format file tidak didukung." }, { status: 400 });

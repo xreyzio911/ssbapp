@@ -10,7 +10,7 @@ function normalizeText(input: string) {
 }
 
 export function sanitizeEmployeeName(name: string) {
-  return normalizeText(name).replace(/\s+/g, "");
+  return normalizeText(name).replace(/\s+/g, "_");
 }
 
 export function sanitizeTitle(title: string) {
@@ -24,9 +24,10 @@ export function buildEmployeeStoredFilename(
   date = new Date()
 ) {
   const safeName = sanitizeEmployeeName(employeeName);
+  const safeDocType = normalizeText(docType).replace(/\s+/g, "_");
   const ts = formatJakartaTimestamp(date);
   const ext = extension.startsWith(".") ? extension : `.${extension}`;
-  return `${safeName}-${docType}-${ts}${ext}`;
+  return `${safeName}_${safeDocType}_${ts}${ext}`;
 }
 
 export function buildHrStoredFilename(

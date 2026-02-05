@@ -24,8 +24,10 @@ export default async function EmployeeDashboard() {
   ]);
 
   const safeUser = {
-    email: user.email,
     name: user.name,
+    username: user.username,
+    email: user.email,
+    position: user.position,
     phone: user.phone,
     address: user.address,
     dob: user.dob ? user.dob.toISOString().slice(0, 10) : null,

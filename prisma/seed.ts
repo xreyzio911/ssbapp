@@ -2,6 +2,7 @@ import { PrismaClient, UserRole } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 import { hashPassword } from "../src/lib/password";
+import { normalizeUsername } from "../src/lib/username";
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
@@ -37,10 +38,14 @@ async function main() {
   }
 
   const passwordHash = await hashPassword(password);
+  const rawUsername =
+    process.env.HR_USERNAME || email.split("@")[0] || name || "hr";
+  const username = normalizeUsername(rawUsername) || "hr";
   await prisma.user.create({
     data: {
       role: UserRole.HR,
       email,
+      username,
       passwordHash,
       name,
     },

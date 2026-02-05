@@ -35,9 +35,11 @@ enum AssignmentStatus {
 model User {
   id           String   @id @default(uuid())
   role         UserRole
-  email        String   @unique
+  email        String?  @unique
+  username     String   @unique
   passwordHash String
   name         String
+  position     String?
   nik          String?
   phone        String?
   address      String?

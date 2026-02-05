@@ -12,9 +12,14 @@ export function LoginForm() {
     <form action={action} className="space-y-4">
       <div>
         <label className="mb-2 block text-sm font-medium text-[#1E453E]">
-          Email
+          Email atau Username
         </label>
-        <Input name="email" type="email" placeholder="nama@email.com" required />
+        <Input
+          name="identifier"
+          type="text"
+          placeholder="nama@email.com atau username"
+          required
+        />
       </div>
       <div>
         <label className="mb-2 block text-sm font-medium text-[#1E453E]">

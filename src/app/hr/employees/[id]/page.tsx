@@ -6,7 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DocStatusToggle } from "./DocStatusToggle";
 import { UserRole } from "@/lib/enums";
+import { buildEmployeeStoredFilename } from "@/lib/filename";
 import Link from "next/link";
+import path from "path";
 
 export default async function EmployeeDetailPage({
   params,
@@ -51,6 +53,29 @@ export default async function EmployeeDetailPage({
     );
     return acc;
   }, {} as Record<string, typeof versions>);
+  const history = versions.map((version: {
+    id: string;
+    docType: string;
+    createdAt: Date;
+    originalFilename: string;
+    storedFilename: string;
+  }) => {
+    const ext =
+      path.extname(version.storedFilename || version.originalFilename || "") ||
+      ".bin";
+    return {
+      id: version.id,
+      docType: version.docType,
+      createdAt: version.createdAt,
+      originalFilename: version.originalFilename,
+      displayName: buildEmployeeStoredFilename(
+        employee.name,
+        version.docType,
+        ext,
+        version.createdAt
+      ),
+    };
+  });
 
   const totalDocTypes = DOC_TYPES.length;
   const uploadedDocTypes = DOC_TYPES.filter(
@@ -81,7 +106,9 @@ export default async function EmployeeDetailPage({
         <Link className="text-sm text-[#1E453E] underline" href="/hr#karyawan">
           Kembali ke daftar karyawan
         </Link>
-        <div className="text-sm text-[#6c6f6e]">{employee.email}</div>
+        <div className="text-sm text-[#6c6f6e]">
+          {employee.email ?? "Tanpa email"}
+        </div>
       </div>
       <div className="rounded-3xl border border-white/70 bg-white/80 p-6 shadow-[0_18px_50px_rgba(30,69,62,0.12)] backdrop-blur">
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -92,7 +119,12 @@ export default async function EmployeeDetailPage({
             <h1 className="mt-2 text-3xl font-semibold text-[#1E453E]">
               {employee.name}
             </h1>
-            <p className="text-sm text-[#6c6f6e]">{employee.email}</p>
+            <p className="text-sm text-[#6c6f6e]">
+              {employee.email ?? "Tanpa email"}
+            </p>
+            <p className="text-xs text-[#6c6f6e]">
+              Username: {employee.username}
+            </p>
             <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[#6c6f6e]">
               <span>
                 Aktivitas terakhir:{" "}
@@ -176,12 +208,18 @@ export default async function EmployeeDetailPage({
           >
             Dokumen HR
           </a>
-          <a
-            href={`mailto:${employee.email}`}
-            className="rounded-2xl border border-[#1E453E]/10 bg-white px-4 py-3 text-sm font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
-          >
-            Kirim Email
-          </a>
+          {employee.email ? (
+            <a
+              href={`mailto:${employee.email}`}
+              className="rounded-2xl border border-[#1E453E]/10 bg-white px-4 py-3 text-sm font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
+            >
+              Kirim Email
+            </a>
+          ) : (
+            <span className="rounded-2xl border border-[#1E453E]/10 bg-white px-4 py-3 text-sm font-medium text-[#6c6f6e]">
+              Email tidak tersedia
+            </span>
+          )}
         </div>
       </Card>
       <Card>
@@ -204,7 +242,19 @@ export default async function EmployeeDetailPage({
           <div>
             <p className="text-xs font-medium text-[#6c6f6e]">Email</p>
             <p className="text-sm font-semibold text-[#1E453E]">
-              {employee.email}
+              {employee.email ?? "Tanpa email"}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-[#6c6f6e]">Username</p>
+            <p className="text-sm font-semibold text-[#1E453E]">
+              {employee.username}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-[#6c6f6e]">Jabatan</p>
+            <p className="text-sm text-[#1E453E]">
+              {employee.position || "Belum diisi"}
             </p>
           </div>
           <div>
@@ -292,7 +342,9 @@ export default async function EmployeeDetailPage({
                     {docVersions.map(
                       (version: {
                         id: string;
+                        docType: string;
                         originalFilename: string;
+                        storedFilename: string;
                         createdAt: Date;
                       }) => (
                       <div
@@ -300,8 +352,14 @@ export default async function EmployeeDetailPage({
                         className="flex flex-wrap items-center justify-between gap-2 text-xs text-[#6c6f6e]"
                       >
                         <span>
-                          {version.originalFilename} ·{" "}
-                          {version.createdAt.toLocaleString("id-ID")}
+                          {buildEmployeeStoredFilename(
+                            employee.name,
+                            version.docType,
+                            path.extname(
+                              version.storedFilename || version.originalFilename || ""
+                            ) || ".bin",
+                            version.createdAt
+                          )} - {version.createdAt.toLocaleString("id-ID")}
                         </span>
                         <Link
                           className="text-[#1E453E] underline"
@@ -317,6 +375,53 @@ export default async function EmployeeDetailPage({
             );
           })}
         </div>
+      </Card>
+
+      <Card>
+        <h2
+          id="riwayat-dokumen"
+          className="scroll-mt-24 text-lg font-semibold text-[#1E453E]"
+        >
+          Riwayat Dokumen
+        </h2>
+        <p className="text-sm text-[#6c6f6e]">
+          Semua versi dokumen karyawan tersimpan dan dapat diunduh.
+        </p>
+        {history.length === 0 ? (
+          <EmptyState
+            title="Belum ada dokumen"
+            description="Riwayat unggahan akan tampil di sini."
+            className="mt-4"
+          />
+        ) : (
+          <div className="mt-4 space-y-3">
+            {history.map((item) => (
+              <div
+                key={item.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#1E453E]/10 bg-white px-4 py-3"
+              >
+                <div>
+                  <p className="text-sm font-semibold text-[#1E453E]">
+                    {item.displayName}
+                  </p>
+                  <p className="text-xs text-[#6c6f6e]">
+                    {DOC_TYPE_LABELS[item.docType]} -{" "}
+                    {item.createdAt.toLocaleString("id-ID")}
+                  </p>
+                  <p className="text-xs text-[#6c6f6e]">
+                    Asli: {item.originalFilename}
+                  </p>
+                </div>
+                <Link
+                  className="text-sm font-medium text-[#1E453E] underline"
+                  href={`/api/hr/documents/${item.id}`}
+                >
+                  Unduh
+                </Link>
+              </div>
+            ))}
+          </div>
+        )}
       </Card>
 
       <Card>

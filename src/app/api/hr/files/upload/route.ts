@@ -18,7 +18,7 @@ import { logAudit } from "@/lib/audit";
 import path from "path";
 import crypto from "crypto";
 
-const MAX_SIZE = 15 * 1024 * 1024;
+const MAX_SIZE = 10 * 1024 * 1024;
 const ALLOWED_MIME = ["application/pdf", "image/jpeg", "image/png"];
 
 type UploadMode = "SHARED" | "SPECIFIC";
@@ -35,7 +35,7 @@ function stripExtension(name: string) {
 
 function validateFile(file: File, fileType: HrFileType) {
   if (file.size > MAX_SIZE) {
-    return "Ukuran file melebihi 15MB.";
+    return "Ukuran file melebihi 10MB.";
   }
   if (!ALLOWED_MIME.includes(file.type)) {
     return "Format file tidak didukung.";
@@ -51,6 +51,9 @@ export async function POST(req: Request) {
   if (!hasRole(user, UserRole.HR)) {
     return NextResponse.json({ error: "Tidak diizinkan." }, { status: 401 });
   }
+
+  const appUrl = (process.env.APP_URL || "http://localhost:3000").replace(/\/$/, "");
+  const loginUrl = `${appUrl}/login`;
 
   const formData = await req.formData();
   const modeRaw = String(formData.get("mode") || "SHARED").toUpperCase();
@@ -103,15 +106,6 @@ export async function POST(req: Request) {
     const employees = await prisma.user.findMany({
       where: { id: { in: employeeIds }, role: UserRole.EMPLOYEE },
     });
-    const missingEmail = employees.filter(
-      (emp: { email: string | null }) => !emp.email
-    );
-    if (missingEmail.length > 0) {
-      return NextResponse.json(
-        { error: "Ada karyawan tanpa email. Mohon lengkapi email sebelum mengirim." },
-        { status: 400 }
-      );
-    }
     const buffer = Buffer.from(await file.arrayBuffer());
     const ext = path.extname(file.name) || ".bin";
     const storedFilename = buildHrStoredFilename(title, ext);
@@ -166,10 +160,25 @@ export async function POST(req: Request) {
         to: email,
         subject: "Dokumen baru dari HR",
         html: `
-        <p>Halo ${employee.name},</p>
-        <p>Anda menerima dokumen baru: <strong>${title}</strong>.</p>
-        <p>Masuk ke portal untuk membuka dokumen.</p>
-      `,
+          <div style="font-family: Arial, sans-serif; color: #1E453E; line-height: 1.6;">
+            <p>Halo ${employee.name},</p>
+            <p>Anda menerima dokumen baru dari HR:</p>
+            <p><strong>${title}</strong></p>
+            <p>Silakan masuk ke portal untuk melihat dan mengunduh dokumen.</p>
+            <p>
+              <a href="${loginUrl}" style="display: inline-block; padding: 10px 18px; border-radius: 999px; background: #1E453E; color: #ffffff; text-decoration: none; font-weight: 600;">
+                Masuk ke Portal
+              </a>
+            </p>
+            <p style="font-size: 12px; color: #6c6f6e;">
+              Jika tombol tidak berfungsi, buka tautan berikut:
+              <a href="${loginUrl}" style="color: #1E453E;">${loginUrl}</a>
+            </p>
+            <p style="font-size: 12px; color: #6c6f6e;">
+              Jika Anda tidak merasa menerima dokumen ini, Anda dapat mengabaikan email ini.
+            </p>
+          </div>
+        `,
       });
     }
 
@@ -265,15 +274,6 @@ export async function POST(req: Request) {
     );
   }
 
-  const missingEmail = employees.filter(
-    (emp: { email: string | null }) => !emp.email
-  );
-  if (missingEmail.length > 0) {
-    return NextResponse.json(
-      { error: "Ada karyawan tanpa email. Mohon lengkapi email sebelum mengirim." },
-      { status: 400 }
-    );
-  }
 
   const employeeById = new Map<
     string,
@@ -348,12 +348,6 @@ export async function POST(req: Request) {
     });
 
     const email = employee.email;
-    if (!email) {
-      return NextResponse.json(
-        { error: "Ada karyawan tanpa email. Mohon lengkapi email sebelum mengirim." },
-        { status: 400 }
-      );
-    }
 
     const password = generateToken(12);
     const kdfPayload = encryptFileKeyWithPassword(fileKey, password);
@@ -371,15 +365,32 @@ export async function POST(req: Request) {
       },
     });
 
-    await sendEmail({
-      to: email,
-      subject: "Dokumen baru dari HR",
-      html: `
-        <p>Halo ${employee.name},</p>
-        <p>Anda menerima dokumen baru: <strong>${finalTitle}</strong>.</p>
-        <p>Masuk ke portal untuk membuka dokumen.</p>
-      `,
-    });
+    if (email) {
+      await sendEmail({
+        to: email,
+        subject: "Dokumen baru dari HR",
+        html: `
+          <div style="font-family: Arial, sans-serif; color: #1E453E; line-height: 1.6;">
+            <p>Halo ${employee.name},</p>
+            <p>Anda menerima dokumen baru dari HR:</p>
+            <p><strong>${finalTitle}</strong></p>
+            <p>Silakan masuk ke portal untuk melihat dan mengunduh dokumen.</p>
+            <p>
+              <a href="${loginUrl}" style="display: inline-block; padding: 10px 18px; border-radius: 999px; background: #1E453E; color: #ffffff; text-decoration: none; font-weight: 600;">
+                Masuk ke Portal
+              </a>
+            </p>
+            <p style="font-size: 12px; color: #6c6f6e;">
+              Jika tombol tidak berfungsi, buka tautan berikut:
+              <a href="${loginUrl}" style="color: #1E453E;">${loginUrl}</a>
+            </p>
+            <p style="font-size: 12px; color: #6c6f6e;">
+              Jika Anda tidak merasa menerima dokumen ini, Anda dapat mengabaikan email ini.
+            </p>
+          </div>
+        `,
+      });
+    }
 
     await logAudit({
       actorId: user.id,

@@ -10,8 +10,10 @@ import { EmployeeProfileForm } from "./profile/EmployeeProfileForm";
 import { EmptyState } from "@/components/ui/empty-state";
 
 type UserProfile = {
-  email: string;
+  email: string | null;
   name: string;
+  username: string;
+  position?: string | null;
   phone?: string | null;
   address?: string | null;
   dob?: string | null;
@@ -158,6 +160,8 @@ export function EmployeeTabsContent({
         <EmployeeProfileForm
           email={user.email}
           name={user.name}
+          username={user.username}
+          position={user.position}
           phone={user.phone}
           address={user.address}
           dob={user.dob ?? null}

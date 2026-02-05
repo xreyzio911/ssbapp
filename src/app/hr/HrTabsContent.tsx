@@ -4,6 +4,7 @@ import { useRoleTabs } from "@/components/nav/RoleTabs";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { InviteEmployeeForm } from "./InviteEmployeeForm";
+import { CreateEmployeeForm } from "./CreateEmployeeForm";
 import { EmployeeList } from "./EmployeeList";
 import { BatchUploadForm } from "./batch-upload/BatchUploadForm";
 import Link from "next/link";
@@ -11,7 +12,8 @@ import Link from "next/link";
 type Employee = {
   id: string;
   name: string;
-  email: string;
+  email: string | null;
+  username: string;
 };
 
 type AuditLog = {
@@ -114,17 +116,30 @@ export function HrTabsContent({
 
   return (
     <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
-      <Card>
-        <h2 className="text-lg font-semibold text-[#1E453E]">
-          Undang Karyawan
-        </h2>
-        <p className="text-sm text-[#6c6f6e]">
-          Kirim undangan untuk aktivasi akun karyawan.
-        </p>
-        <div className="mt-4">
-          <InviteEmployeeForm />
-        </div>
-      </Card>
+      <div className="space-y-6">
+        <Card>
+          <h2 className="text-lg font-semibold text-[#1E453E]">
+            Undang Karyawan
+          </h2>
+          <p className="text-sm text-[#6c6f6e]">
+            Kirim undangan untuk aktivasi akun karyawan.
+          </p>
+          <div className="mt-4">
+            <InviteEmployeeForm />
+          </div>
+        </Card>
+        <Card>
+          <h2 className="text-lg font-semibold text-[#1E453E]">
+            Buat Akun Manual
+          </h2>
+          <p className="text-sm text-[#6c6f6e]">
+            Buat akun tanpa email. Login menggunakan username dan kata sandi.
+          </p>
+          <div className="mt-4">
+            <CreateEmployeeForm />
+          </div>
+        </Card>
+      </div>
       <Card>
         <h2 className="text-lg font-semibold text-[#1E453E]">
           Daftar Karyawan

@@ -10,7 +10,7 @@ export default async function HrDashboard() {
     prisma.user.findMany({
       where: { role: UserRole.EMPLOYEE },
       orderBy: { name: "asc" },
-      select: { id: true, name: true, email: true },
+      select: { id: true, name: true, email: true, username: true },
     }),
     prisma.auditLog.findMany({
       orderBy: { createdAt: "desc" },

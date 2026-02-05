@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 type Props = {
-  email: string;
   name: string;
+  username: string;
+  email: string | null;
+  position?: string | null;
   phone?: string | null;
   address?: string | null;
   dob?: string | null;
@@ -67,9 +69,21 @@ export function EmployeeProfileForm(props: Props) {
       </div>
       <div>
         <label className="mb-2 block text-sm font-medium text-[#1E453E]">
-          Email
+          Username
         </label>
-        <Input value={props.email} disabled />
+        <Input value={props.username} disabled />
+      </div>
+      <div>
+        <label className="mb-2 block text-sm font-medium text-[#1E453E]">
+          Jabatan
+        </label>
+        <Input value={props.position ?? ""} placeholder="Belum ada jabatan" disabled />
+      </div>
+      <div>
+        <label className="mb-2 block text-sm font-medium text-[#1E453E]">
+          Email (opsional)
+        </label>
+        <Input value={props.email ?? ""} placeholder="Belum ada email" disabled />
       </div>
       <div>
         <label className="mb-2 block text-sm font-medium text-[#1E453E]">

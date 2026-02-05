@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { useRouter } from "next/navigation";
 
 type Assignment = {
@@ -31,25 +30,38 @@ export function HrFileCard({
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [fileBytes, setFileBytes] = useState<Uint8Array | null>(null);
   const router = useRouter();
+  const fileEndpoint = `/api/employee/hr-files/${assignment.id}/blob`;
 
   async function openFile() {
     setStatus("Memuat dokumen...");
     setLoading(true);
     try {
-      const blobRes = await fetch(`/api/employee/hr-files/${assignment.id}/blob`);
+      if (assignment.fileType !== "AGREEMENT") {
+        setFileBytes(null);
+        setFileUrl(fileEndpoint);
+        setStatus(null);
+        return;
+      }
+      const blobRes = await fetch(fileEndpoint);
       if (!blobRes.ok) {
         const data = await blobRes.json();
         throw new Error(data.error || "Gagal mengambil dokumen.");
       }
       const bytes = new Uint8Array(await blobRes.arrayBuffer());
       setFileBytes(bytes);
-      const url = URL.createObjectURL(new Blob([bytes], { type: assignment.mimeType }));
+      if (fileUrl?.startsWith("blob:")) {
+        URL.revokeObjectURL(fileUrl);
+      }
+      const url = URL.createObjectURL(
+        new Blob([bytes], { type: assignment.mimeType })
+      );
       setFileUrl(url);
       setStatus(null);
     } catch (err: any) {
       setStatus(err.message || "Gagal memuat dokumen.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   async function submitSignature() {
@@ -68,6 +80,7 @@ export function HrFileCard({
       const sigBytes = new Uint8Array(await sigRes.arrayBuffer());
       const sigMime = sigRes.headers.get("Content-Type") || "image/png";
 
+      const { PDFDocument, rgb, StandardFonts } = await import("pdf-lib");
       const pdfDoc = await PDFDocument.load(fileBytes);
       const pages = pdfDoc.getPages();
       const page = pages[pages.length - 1];

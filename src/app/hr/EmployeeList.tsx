@@ -9,7 +9,8 @@ import { createPortal } from "react-dom";
 type Employee = {
   id: string;
   name: string;
-  email: string;
+  email: string | null;
+  username: string;
 };
 
 export function EmployeeList({ employees }: { employees: Employee[] }) {
@@ -22,7 +23,9 @@ export function EmployeeList({ employees }: { employees: Employee[] }) {
     const q = query.toLowerCase();
     return employees.filter(
       (emp) =>
-        emp.name.toLowerCase().includes(q) || emp.email.toLowerCase().includes(q)
+        emp.name.toLowerCase().includes(q) ||
+        emp.username.toLowerCase().includes(q) ||
+        (emp.email ? emp.email.toLowerCase().includes(q) : false)
     );
   }, [query, employees]);
 
@@ -46,7 +49,12 @@ export function EmployeeList({ employees }: { employees: Employee[] }) {
     };
   }, [activeEmployee]);
 
-  async function handleCopyEmail(email: string) {
+  async function handleCopyEmail(email: string | null) {
+    if (!email) {
+      setCopyStatus("Email belum tersedia.");
+      setTimeout(() => setCopyStatus(null), 1500);
+      return;
+    }
     if (!navigator.clipboard) {
       setCopyStatus("Fitur salin tidak tersedia.");
       setTimeout(() => setCopyStatus(null), 1500);
@@ -66,7 +74,7 @@ export function EmployeeList({ employees }: { employees: Employee[] }) {
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex-1">
           <Input
-            placeholder="Cari nama atau email"
+            placeholder="Cari nama, username, atau email"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
@@ -96,7 +104,12 @@ export function EmployeeList({ employees }: { employees: Employee[] }) {
               <p className="text-sm font-semibold text-[#1E453E]">
                 {employee.name}
               </p>
-              <p className="text-xs text-[#6c6f6e]">{employee.email}</p>
+              <p className="text-xs text-[#6c6f6e]">
+                {employee.email ?? "Tanpa email"}
+              </p>
+              <p className="text-xs text-[#6c6f6e]">
+                Username: {employee.username}
+              </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <button
@@ -151,7 +164,10 @@ export function EmployeeList({ employees }: { employees: Employee[] }) {
                       {activeEmployee.name}
                     </h3>
                     <p className="text-sm text-[#6c6f6e]">
-                      {activeEmployee.email}
+                      {activeEmployee.email ?? "Tanpa email"}
+                    </p>
+                    <p className="text-xs text-[#6c6f6e]">
+                      Username: {activeEmployee.username}
                     </p>
                   </div>
                   <button
@@ -169,7 +185,7 @@ export function EmployeeList({ employees }: { employees: Employee[] }) {
                       Informasi Kontak
                     </p>
                     <div className="mt-3 space-y-1 text-sm text-[#1E453E]">
-                      <p>{activeEmployee.email}</p>
+                      <p>{activeEmployee.email ?? "Tanpa email"}</p>
                       {copyStatus ? (
                         <p className="text-xs text-[#6c6f6e]">{copyStatus}</p>
                       ) : null}
@@ -182,12 +198,18 @@ export function EmployeeList({ employees }: { employees: Employee[] }) {
                       >
                         Salin email
                       </button>
-                      <a
-                        href={`mailto:${activeEmployee.email}`}
-                        className="rounded-full border border-[#1E453E]/20 px-4 py-2 text-xs font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
-                      >
-                        Kirim email
-                      </a>
+                      {activeEmployee.email ? (
+                        <a
+                          href={`mailto:${activeEmployee.email}`}
+                          className="rounded-full border border-[#1E453E]/20 px-4 py-2 text-xs font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
+                        >
+                          Kirim email
+                        </a>
+                      ) : (
+                        <span className="rounded-full border border-[#1E453E]/10 px-4 py-2 text-xs font-medium text-[#6c6f6e]">
+                          Email tidak tersedia
+                        </span>
+                      )}
                     </div>
                   </div>
 

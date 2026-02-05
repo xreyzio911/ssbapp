@@ -8,7 +8,7 @@ import { UserRole } from "@prisma/client";
 test("file naming uses Jakarta time and sanitized name", () => {
   const date = new Date(Date.UTC(2026, 0, 31, 7, 30));
   const filename = buildEmployeeStoredFilename("Budi Santoso", "KK", ".pdf", date);
-  assert.equal(filename, "BudiSantoso-KK-20260131-1430.pdf");
+  assert.equal(filename, "Budi_Santoso_KK_20260131-1430.pdf");
 });
 
 test("encryption/decryption roundtrip", () => {

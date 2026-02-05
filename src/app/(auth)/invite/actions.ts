@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { hashToken } from "@/lib/crypto";
 import { hashPassword } from "@/lib/password";
 import { createSession } from "@/lib/auth";
+import { normalizeUsername } from "@/lib/username";
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { UserRole } from "@/lib/enums";
@@ -54,12 +55,21 @@ export async function acceptInviteAction(
     return { error: "Akun sudah terdaftar. Silakan masuk." };
   }
 
+  const baseUsername = normalizeUsername(invite.name);
+  let username = baseUsername || `user-${invite.id.slice(0, 6)}`;
+  let suffix = 0;
+  while (await prisma.user.findUnique({ where: { username } })) {
+    suffix += 1;
+    username = `${baseUsername || "user"}-${invite.id.slice(0, 6)}-${suffix}`;
+  }
+
   const passwordHash = await hashPassword(parsed.data.password);
   const user = await prisma.user.create({
     data: {
       role: UserRole.EMPLOYEE,
       email: invite.email,
       name: invite.name,
+      username,
       passwordHash,
       phone: parsed.data.phone,
       address: parsed.data.address,

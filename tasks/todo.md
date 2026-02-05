@@ -1,6 +1,32 @@
 # TODO
-- [ ] Investigate why invite token links fail in production (verify: invite link resolves and allows account creation).
-- [ ] Provide a safe manual path to add an employee record for testing (verify: employee exists and can log in or receive invite).
+- [x] Add Lighthouse mobile baseline script + deps (verify: script runs locally).
+- [x] Add upload/download timing script with cookie auth (verify: script runs with PERF_COOKIE).
+- [x] Wire npm scripts + docs; run tests (verify: `npm test`).
+- [x] Implement presigned S3 upload flow for employee documents with finalize step (verify: S3 upload + DB record).
+- [x] Expose storage driver + S3 helpers and add upload token signing (verify: presign/complete endpoints validate token).
+- [x] Update employee upload UI to use presign with local fallback (verify: local upload still works).
+- [x] Run `npm install` and `npm test`.
+- [x] Implement 10MB size cap (HR + employee APIs + client validation) (verify: >10MB rejected in UI + API).
+- [x] Lazy-load pdf-lib and avoid buffering HR files for non-agreements (verify: bundle smaller; general docs open via direct endpoint).
+- [x] Update UI copy to mention 10MB max where relevant (verify: batch + employee upload hints updated).
+- [x] Verify with `npm test`.
+- [ ] Plan: capture baseline load/upload/download metrics (Lighthouse mobile, Web Vitals, upload/download timing, API p95) (verify: baseline report saved).
+- [x] Plan: enforce 10MB max for HR + employee uploads (server + client validation, clear error copy) (verify: >10MB rejected consistently).
+- [ ] Plan: reduce initial load size (bundle analysis, route-level code splitting, remove unused deps, optimize fonts/images, cache headers) (verify: Lighthouse mobile LCP/TTI improves).
+- [ ] Plan: optimize data fetching (parallel queries, pagination for lists, Prisma query review + indexes) (verify: key HR/Employee pages p95 response time improves).
+- [ ] Plan: speed uploads (direct-to-S3 presigned URLs for PDFs, optional multipart for large files, client-side validation) (verify: upload time + failure rate improves).
+- [ ] Plan: speed downloads (optional CloudFront for S3, cache-control, range/streaming for PDFs) (verify: download time improves on mobile).
+- [ ] Plan: mobile lightweight UX (defer HR-heavy UI, shrink JS, load PDF bytes only when needed, avoid pdf-lib unless signing) (verify: mobile bundle size + runtime memory improves).
+- [ ] Plan: infra upgrades (Vercel Pro, Supabase Pro, S3 Standard; add CloudFront if download load grows) (verify: limits align with growth and cost targets).
+- [x] Plan: standardize employee-uploaded filenames and expose consistent naming in HR views.
+- [x] Plan: add HR "riwayat dokumen" section showing all employee document versions with dates.
+- [x] Plan: introduce username-based login (email optional), update schema, UI, and auth flows.
+- [x] Plan: add manual employee creation flow (name/username/password) for HR.
+- [x] Plan: verify updated uploads, HR views, and login with `npm test`.
+- [x] Investigate why invite token links fail in production (verify: invite link resolves and allows account creation).
+- [x] Provide a safe manual path to add an employee record for testing (verify: employee exists and can log in or receive invite).
+- [x] Add login CTA and fallback link to HR document notification emails (verify: email includes login button + URL).
+- [x] Refine invite and password reset emails with clear CTA, expiry, and fallback links (verify: email templates updated).
 - [x] Remove HR-file password UI and copy; open documents directly after login (verify: HR docs open without password prompt).
 - [x] Serve decrypted HR files to employees and remove password-related HR reissue UI (verify: employee blob endpoint returns plaintext, HR detail page has no password reissue).
 - [x] Update HR-file notification emails to remove password content (verify: upload email template contains no password text).
@@ -25,6 +51,17 @@
 - [x] Use 303 redirect after POST /logout to avoid POST -> /login 405 (verify: logout returns to login).
 
 # Review
+- Added `scripts/perf` baseline workflow (Lighthouse mobile + upload/download timing) and documented usage.
+- Added `perf:lighthouse` and `perf:upload` scripts plus deps (`lighthouse`, `chrome-launcher`).
+- Ran `npm install` and `npm test`.
+- Added presigned S3 upload + complete routes for employee docs with signed upload tokens and S3 HEAD validation.
+- Exposed storage driver/S3 helpers and added upload token signing/verification helper.
+- Updated employee document upload card to use presigned flow with safe fallback to local upload.
+- Ran `npm install` and `npm test`.
+- Enforced 10MB upload cap in HR + employee APIs and added client-side validation in upload UI.
+- Lazy-loaded `pdf-lib` and opened non-agreement HR files via direct blob endpoint to avoid buffering bytes in state.
+- Added 10MB size hints in HR batch upload and employee document upload cards.
+- Ran `npm test`.
 - Added `tests/typecheck.test.ts` to run `tsc --noEmit` during `npm test`.
 - Local `tsc` and `next build` did not reproduce the Vercel implicit-any error; added an explicit type annotation to avoid inference issues.
 - Verified with `npm test` and `npm run build`.
@@ -56,3 +93,11 @@
 - Re-verified with `npm test`.
 - Ran `npm test`.
 - Invite page now awaits `searchParams` before reading the token to avoid false "token missing" errors.
+- Refined HR doc, invite, and password reset email templates with CTA buttons and fallback URLs.
+- Re-ran `npm test`.
+- Added username support (email optional), manual account creation form, and username/email login.
+- Standardized employee document filenames and added HR document history with dated downloads.
+- Updated HR/employee views to handle missing emails and show usernames.
+- Ran `npm run db:generate` and `npm test` (again after login tweaks).
+- Added optional position (jabatan) field, surfaced in HR/employee profiles and manual creation form.
+- Ran `npm run db:generate` and `npm test`.

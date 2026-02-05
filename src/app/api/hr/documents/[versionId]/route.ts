@@ -4,6 +4,8 @@ import { prisma } from "@/lib/db";
 import { UserRole } from "@/lib/enums";
 import { readFileBuffer } from "@/lib/storage";
 import { logAudit } from "@/lib/audit";
+import { buildEmployeeStoredFilename } from "@/lib/filename";
+import path from "path";
 
 export async function GET(
   _req: NextRequest,
@@ -17,12 +19,21 @@ export async function GET(
 
   const version = await prisma.documentVersion.findUnique({
     where: { id: versionId },
+    include: { user: true },
   });
   if (!version) {
     return NextResponse.json({ error: "File tidak ditemukan." }, { status: 404 });
   }
 
   const buffer = await readFileBuffer(version.storagePath);
+  const ext =
+    path.extname(version.storedFilename || version.originalFilename || "") || ".bin";
+  const downloadName = buildEmployeeStoredFilename(
+    version.user.name,
+    version.docType,
+    ext,
+    version.createdAt
+  );
   await logAudit({
     actorId: user.id,
     actorRole: user.role,
@@ -33,7 +44,7 @@ export async function GET(
   return new Response(buffer, {
     headers: {
       "Content-Type": version.mimeType,
-      "Content-Disposition": `attachment; filename="${version.storedFilename}"`,
+      "Content-Disposition": `attachment; filename="${downloadName}"`,
     },
   });
 }

@@ -7,11 +7,11 @@ export function getStorageRoot() {
   return process.env.LOCAL_STORAGE_PATH || path.join(process.cwd(), "storage");
 }
 
-function getDriver() {
+export function getStorageDriver() {
   return process.env.STORAGE_DRIVER === "s3" ? "s3" : "local";
 }
 
-function getS3Client() {
+export function getS3Client() {
   const region = process.env.S3_REGION;
   const bucket = process.env.S3_BUCKET;
   const accessKeyId = process.env.S3_ACCESS_KEY_ID;
@@ -32,7 +32,7 @@ function getS3Client() {
   });
 }
 
-function getS3Bucket() {
+export function getS3Bucket() {
   const bucket = process.env.S3_BUCKET;
   if (!bucket) throw new Error("S3_BUCKET belum diset.");
   return bucket;
@@ -43,7 +43,7 @@ export async function ensureDir(dir: string) {
 }
 
 export async function saveFile(relativePath: string, buffer: Buffer) {
-  if (getDriver() === "s3") {
+  if (getStorageDriver() === "s3") {
     const client = getS3Client();
     await client.send(
       new PutObjectCommand({
@@ -62,7 +62,7 @@ export async function saveFile(relativePath: string, buffer: Buffer) {
 }
 
 export async function readFileBuffer(relativePath: string) {
-  if (getDriver() === "s3") {
+  if (getStorageDriver() === "s3") {
     const client = getS3Client();
     const result = await client.send(
       new GetObjectCommand({
