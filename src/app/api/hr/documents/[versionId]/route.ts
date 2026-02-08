@@ -26,7 +26,22 @@ export async function GET(
     return NextResponse.json({ error: "File tidak ditemukan." }, { status: 404 });
   }
 
-  const buffer = await readFileBuffer(version.storagePath);
+  let buffer: Uint8Array;
+  try {
+    buffer = await readFileBuffer(version.storagePath);
+  } catch (error: unknown) {
+    const maybeFsError = error as { code?: string };
+    if (maybeFsError.code === "ENOENT") {
+      return NextResponse.json(
+        {
+          error:
+            "File fisik tidak ditemukan di penyimpanan. Periksa konfigurasi STORAGE_DRIVER/S3.",
+        },
+        { status: 404 }
+      );
+    }
+    throw error;
+  }
   const ext =
     path.extname(version.storedFilename || version.originalFilename || "") || ".bin";
   const downloadName = buildEmployeeStoredFilename(
@@ -42,7 +57,11 @@ export async function GET(
     targetType: "DocumentVersion",
     targetId: version.id,
   });
-  return new Response(buffer, {
+  const body = buffer.buffer.slice(
+    buffer.byteOffset,
+    buffer.byteOffset + buffer.byteLength
+  ) as ArrayBuffer;
+  return new Response(body, {
     headers: {
       "Content-Type": version.mimeType,
       "Content-Disposition": preview

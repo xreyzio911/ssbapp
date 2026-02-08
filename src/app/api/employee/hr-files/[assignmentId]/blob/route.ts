@@ -24,7 +24,22 @@ export async function GET(
     return NextResponse.json({ error: "Data tidak ditemukan." }, { status: 404 });
   }
 
-  const buffer = await readFileBuffer(assignment.hrFile.storagePath);
+  let buffer: Buffer;
+  try {
+    buffer = await readFileBuffer(assignment.hrFile.storagePath);
+  } catch (error: unknown) {
+    const maybeFsError = error as { code?: string };
+    if (maybeFsError.code === "ENOENT") {
+      return NextResponse.json(
+        {
+          error:
+            "File fisik tidak ditemukan di penyimpanan. Hubungi HR untuk unggah ulang.",
+        },
+        { status: 404 }
+      );
+    }
+    throw error;
+  }
   const fileKey = decryptFileKeyWithMaster(
     Buffer.from(assignment.hrFile.fileKeyEncMaster, "base64"),
     Buffer.from(assignment.hrFile.fileKeyEncMasterIv, "base64")
@@ -41,7 +56,11 @@ export async function GET(
     targetType: "HrFileAssignment",
     targetId: assignment.id,
   });
-  return new Response(plaintext, {
+  const body = plaintext.buffer.slice(
+    plaintext.byteOffset,
+    plaintext.byteOffset + plaintext.byteLength
+  ) as ArrayBuffer;
+  return new Response(body, {
     headers: {
       "Content-Type": assignment.hrFile.mimeType,
       "Content-Length": plaintext.length.toString(),

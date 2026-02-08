@@ -4,13 +4,31 @@ import { createReadStream } from "fs";
 import os from "os";
 import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 
+function getEnvValue(...keys: string[]) {
+  for (const key of keys) {
+    const raw = process.env[key];
+    if (!raw) {
+      continue;
+    }
+    const trimmed = raw.trim();
+    if (!trimmed) {
+      continue;
+    }
+    if (
+      (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+      (trimmed.startsWith("'") && trimmed.endsWith("'"))
+    ) {
+      return trimmed.slice(1, -1).trim();
+    }
+    return trimmed;
+  }
+  return "";
+}
+
 function hasS3EnvConfig() {
-  return Boolean(
-    process.env.S3_REGION &&
-      process.env.S3_BUCKET &&
-      process.env.S3_ACCESS_KEY_ID &&
-      process.env.S3_SECRET_ACCESS_KEY
-  );
+  const region = getEnvValue("S3_REGION", "AWS_REGION");
+  const bucket = getEnvValue("S3_BUCKET");
+  return Boolean(region && bucket);
 }
 
 function isServerlessRuntime() {
@@ -24,7 +42,7 @@ function isServerlessRuntime() {
 }
 
 export function getStorageRoot() {
-  const configuredPath = process.env.LOCAL_STORAGE_PATH?.trim();
+  const configuredPath = getEnvValue("LOCAL_STORAGE_PATH");
   if (configuredPath) {
     return configuredPath;
   }
@@ -35,39 +53,49 @@ export function getStorageRoot() {
 }
 
 export function getStorageDriver() {
-  const configuredDriver = process.env.STORAGE_DRIVER?.trim().toLowerCase();
+  const configuredDriver = getEnvValue("STORAGE_DRIVER").toLowerCase();
   if (configuredDriver === "s3") {
     return "s3";
   }
   if (configuredDriver === "local") {
+    if (isServerlessRuntime() && hasS3EnvConfig()) {
+      // On serverless, prefer durable storage when config is available.
+      return "s3";
+    }
     return "local";
   }
   return hasS3EnvConfig() ? "s3" : "local";
 }
 
 export function getS3Client() {
-  const region = process.env.S3_REGION;
-  const bucket = process.env.S3_BUCKET;
-  const accessKeyId = process.env.S3_ACCESS_KEY_ID;
-  const secretAccessKey = process.env.S3_SECRET_ACCESS_KEY;
-  if (!region || !bucket || !accessKeyId || !secretAccessKey) {
+  const region = getEnvValue("S3_REGION", "AWS_REGION");
+  const bucket = getEnvValue("S3_BUCKET");
+  const accessKeyId = getEnvValue("S3_ACCESS_KEY_ID", "AWS_ACCESS_KEY_ID");
+  const secretAccessKey = getEnvValue(
+    "S3_SECRET_ACCESS_KEY",
+    "AWS_SECRET_ACCESS_KEY"
+  );
+  if (!region || !bucket) {
     throw new Error("S3 env belum lengkap.");
   }
-  const endpoint = process.env.S3_ENDPOINT;
-  const forcePathStyle = process.env.S3_FORCE_PATH_STYLE === "true";
-  return new S3Client({
+  const endpoint = getEnvValue("S3_ENDPOINT");
+  const forcePathStyle = getEnvValue("S3_FORCE_PATH_STYLE") === "true";
+  const config: ConstructorParameters<typeof S3Client>[0] = {
     region,
     endpoint,
     forcePathStyle,
-    credentials: {
+  };
+  if (accessKeyId && secretAccessKey) {
+    config.credentials = {
       accessKeyId,
       secretAccessKey,
-    },
-  });
+    };
+  }
+  return new S3Client(config);
 }
 
 export function getS3Bucket() {
-  const bucket = process.env.S3_BUCKET;
+  const bucket = getEnvValue("S3_BUCKET");
   if (!bucket) throw new Error("S3_BUCKET belum diset.");
   return bucket;
 }
@@ -98,25 +126,48 @@ export async function saveFile(relativePath: string, buffer: Buffer) {
 export async function readFileBuffer(relativePath: string) {
   if (getStorageDriver() === "s3") {
     const client = getS3Client();
-    const result = await client.send(
-      new GetObjectCommand({
-        Bucket: getS3Bucket(),
-        Key: relativePath.replace(/\\/g, "/"),
-      })
-    );
-    const body = result.Body;
-    if (!body || typeof body === "string") {
-      throw new Error("Gagal membaca file dari S3.");
+    try {
+      const result = await client.send(
+        new GetObjectCommand({
+          Bucket: getS3Bucket(),
+          Key: relativePath.replace(/\\/g, "/"),
+        })
+      );
+      const body = result.Body;
+      if (!body || typeof body === "string") {
+        throw new Error("Gagal membaca file dari S3.");
+      }
+      const chunks: Buffer[] = [];
+      for await (const chunk of body as AsyncIterable<Uint8Array>) {
+        chunks.push(Buffer.from(chunk));
+      }
+      return Buffer.concat(chunks);
+    } catch (error: unknown) {
+      const maybeAwsError = error as { name?: string; $metadata?: { httpStatusCode?: number } };
+      if (
+        maybeAwsError?.name === "NoSuchKey" ||
+        maybeAwsError?.$metadata?.httpStatusCode === 404
+      ) {
+        const notFound = new Error("FILE_NOT_FOUND");
+        (notFound as Error & { code?: string }).code = "ENOENT";
+        throw notFound;
+      }
+      throw error;
     }
-    const chunks: Buffer[] = [];
-    for await (const chunk of body as AsyncIterable<Uint8Array>) {
-      chunks.push(Buffer.from(chunk));
-    }
-    return Buffer.concat(chunks);
   }
 
   const fullPath = path.join(getStorageRoot(), relativePath);
-  return fs.readFile(fullPath);
+  try {
+    return await fs.readFile(fullPath);
+  } catch (error: unknown) {
+    const maybeFsError = error as { code?: string };
+    if (maybeFsError.code === "ENOENT") {
+      const notFound = new Error("FILE_NOT_FOUND");
+      (notFound as Error & { code?: string }).code = "ENOENT";
+      throw notFound;
+    }
+    throw error;
+  }
 }
 
 export function createFileStream(relativePath: string) {

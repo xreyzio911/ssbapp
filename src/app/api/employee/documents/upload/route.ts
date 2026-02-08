@@ -38,8 +38,18 @@ export async function POST(req: Request) {
   const ext = path.extname(file.name) || ".bin";
   const storedFilename = buildEmployeeStoredFilename(user.name, docType, ext);
   const storagePath = path.join("employee", user.id, docType, storedFilename);
-
-  await saveFile(storagePath, buffer);
+  try {
+    await saveFile(storagePath, buffer);
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error && error.message
+        ? error.message
+        : "Gagal menyimpan dokumen.";
+    if (message.includes("S3 env belum lengkap") || message.includes("S3_BUCKET belum diset")) {
+      return NextResponse.json({ error: "Konfigurasi penyimpanan S3 belum lengkap." }, { status: 500 });
+    }
+    return NextResponse.json({ error: "Gagal menyimpan dokumen." }, { status: 500 });
+  }
 
   const version = await prisma.documentVersion.create({
     data: {

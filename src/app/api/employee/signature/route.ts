@@ -23,7 +23,11 @@ export async function GET() {
   }
 
   const buffer = await readFileBuffer(record.signaturePath);
-  return new Response(buffer, {
+  const body = buffer.buffer.slice(
+    buffer.byteOffset,
+    buffer.byteOffset + buffer.byteLength
+  ) as ArrayBuffer;
+  return new Response(body, {
     headers: {
       "Content-Type": record.signatureMime,
       "Cache-Control": "private, max-age=0, must-revalidate",

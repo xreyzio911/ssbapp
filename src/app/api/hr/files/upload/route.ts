@@ -46,6 +46,17 @@ function validateFile(file: File, fileType: HrFileType) {
   return null;
 }
 
+function getStorageUploadErrorMessage(error: unknown) {
+  const message =
+    error instanceof Error && error.message
+      ? error.message
+      : "Penyimpanan file gagal.";
+  if (message.includes("S3 env belum lengkap") || message.includes("S3_BUCKET belum diset")) {
+    return "Konfigurasi penyimpanan S3 belum lengkap.";
+  }
+  return "Gagal menyimpan file ke penyimpanan.";
+}
+
 export async function POST(req: Request) {
   const user = await getSessionUser();
   if (!hasRole(user, UserRole.HR)) {
@@ -114,7 +125,14 @@ export async function POST(req: Request) {
 
     const fileKey = generateFileKey();
     const { ciphertext, iv } = encryptAesGcm(buffer, fileKey);
-    await saveFile(storagePath, ciphertext);
+    try {
+      await saveFile(storagePath, ciphertext);
+    } catch (error: unknown) {
+      return NextResponse.json(
+        { error: getStorageUploadErrorMessage(error) },
+        { status: 500 }
+      );
+    }
 
     const masterWrapped = encryptFileKeyWithMaster(fileKey);
 
@@ -326,7 +344,14 @@ export async function POST(req: Request) {
 
     const fileKey = generateFileKey();
     const { ciphertext, iv } = encryptAesGcm(buffer, fileKey);
-    await saveFile(storagePath, ciphertext);
+    try {
+      await saveFile(storagePath, ciphertext);
+    } catch (error: unknown) {
+      return NextResponse.json(
+        { error: getStorageUploadErrorMessage(error) },
+        { status: 500 }
+      );
+    }
 
     const masterWrapped = encryptFileKeyWithMaster(fileKey);
 

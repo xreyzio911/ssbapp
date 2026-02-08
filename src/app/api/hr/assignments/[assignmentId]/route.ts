@@ -38,7 +38,22 @@ export async function GET(
 
   const filePath = signed ? assignment.signedFilePath! : assignment.hrFile.storagePath;
   const iv = signed ? assignment.signedFileIv! : assignment.hrFile.fileIv;
-  const encrypted = await readFileBuffer(filePath);
+  let encrypted: Buffer;
+  try {
+    encrypted = await readFileBuffer(filePath);
+  } catch (error: unknown) {
+    const maybeFsError = error as { code?: string };
+    if (maybeFsError.code === "ENOENT") {
+      return NextResponse.json(
+        {
+          error:
+            "File fisik tidak ditemukan di penyimpanan. Periksa konfigurasi STORAGE_DRIVER/S3.",
+        },
+        { status: 404 }
+      );
+    }
+    throw error;
+  }
   const plaintext = decryptAesGcm(
     encrypted,
     fileKey,
@@ -57,7 +72,11 @@ export async function GET(
     targetId: assignment.id,
   });
 
-  return new Response(plaintext, {
+  const body = plaintext.buffer.slice(
+    plaintext.byteOffset,
+    plaintext.byteOffset + plaintext.byteLength
+  ) as ArrayBuffer;
+  return new Response(body, {
     headers: {
       "Content-Type": signed ? "application/pdf" : assignment.hrFile.mimeType,
       "Content-Disposition": `attachment; filename="${filename}"`,
