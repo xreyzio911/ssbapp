@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DocStatusToggle } from "./DocStatusToggle";
+import { DocumentVersionList } from "./DocumentVersionList";
 import { UserRole } from "@/lib/enums";
 import { buildEmployeeStoredFilename } from "@/lib/filename";
 import Link from "next/link";
@@ -333,8 +334,8 @@ export default async function EmployeeDetailPage({
                 key={doc.type}
                 className="rounded-2xl border border-[#1E453E]/10 bg-white px-4 py-4"
               >
-                <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
-                  <div className="min-w-0">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
                     <p className="text-sm font-semibold text-[#1E453E]">
                       {DOC_TYPE_LABELS[doc.type]}
                     </p>
@@ -343,64 +344,42 @@ export default async function EmployeeDetailPage({
                         ? `Terakhir: ${latest.createdAt.toLocaleDateString("id-ID")}`
                         : "Belum ada file"}
                     </p>
-                    {docVersions.length > 0 ? (
-                      <div className="mt-3 space-y-2">
-                        {docVersions.map(
-                          (version: {
-                            id: string;
-                            docType: string;
-                            originalFilename: string;
-                            storedFilename: string;
-                            createdAt: Date;
-                          }) => (
-                          <div
-                            key={version.id}
-                            className="flex flex-wrap items-center justify-between gap-2 text-xs text-[#6c6f6e]"
-                          >
-                            <span className="min-w-0 break-all">
-                              {buildEmployeeStoredFilename(
-                                employee.name,
-                                version.docType,
-                                path.extname(
-                                  version.storedFilename || version.originalFilename || ""
-                                ) || ".bin",
-                                version.createdAt
-                              )} - {version.createdAt.toLocaleString("id-ID")}
-                            </span>
-                            <div className="flex items-center gap-3">
-                              <a
-                                className="text-[#1E453E] underline"
-                                href={`/api/hr/documents/${version.id}?preview=1`}
-                                target="_blank"
-                                rel="noreferrer noopener"
-                              >
-                                Pratinjau
-                              </a>
-                              <a
-                                className="text-[#1E453E] underline"
-                                href={`/api/hr/documents/${version.id}`}
-                              >
-                                Unduh
-                              </a>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="mt-3 text-xs text-[#6c6f6e]">
-                        Belum ada riwayat unggahan.
-                      </p>
-                    )}
                   </div>
-                  <div className="space-y-2 lg:justify-self-end lg:w-[340px]">
-                    <Badge tone={tone}>{status}</Badge>
-                    <DocStatusToggle
-                      employeeId={employee.id}
-                      docType={doc.type}
-                      needsUpdate={needsUpdate}
-                      currentNote={updateNote}
-                    />
-                  </div>
+                  <Badge tone={tone}>{status}</Badge>
+                </div>
+
+                <div className="mt-4 max-w-xl">
+                  <DocStatusToggle
+                    employeeId={employee.id}
+                    docType={doc.type}
+                    needsUpdate={needsUpdate}
+                    currentNote={updateNote}
+                  />
+                </div>
+
+                <div className="mt-4">
+                  <DocumentVersionList
+                    items={docVersions.map((version: {
+                      id: string;
+                      docType: string;
+                      originalFilename: string;
+                      storedFilename: string;
+                      createdAt: Date;
+                    }) => ({
+                      id: version.id,
+                      title: buildEmployeeStoredFilename(
+                        employee.name,
+                        version.docType,
+                        path.extname(version.storedFilename || version.originalFilename || "") ||
+                          ".bin",
+                        version.createdAt
+                      ),
+                      subtitle: version.createdAt.toLocaleString("id-ID"),
+                      previewHref: `/api/hr/documents/${version.id}?preview=1`,
+                      downloadHref: `/api/hr/documents/${version.id}`,
+                    }))}
+                    emptyText="Belum ada riwayat unggahan."
+                  />
                 </div>
               </div>
             );
@@ -425,42 +404,20 @@ export default async function EmployeeDetailPage({
             className="mt-4"
           />
         ) : (
-          <div className="mt-4 space-y-3">
-            {history.map((item) => (
-              <div
-                key={item.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#1E453E]/10 bg-white px-4 py-3"
-              >
-                <div>
-                  <p className="text-sm font-semibold text-[#1E453E]">
-                    {item.displayName}
-                  </p>
-                  <p className="text-xs text-[#6c6f6e]">
-                    {DOC_TYPE_LABELS[item.docType]} -{" "}
-                    {item.createdAt.toLocaleString("id-ID")}
-                  </p>
-                  <p className="text-xs text-[#6c6f6e]">
-                    Asli: {item.originalFilename}
-                  </p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <a
-                    className="text-sm font-medium text-[#1E453E] underline"
-                    href={`/api/hr/documents/${item.id}?preview=1`}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                  >
-                    Pratinjau
-                  </a>
-                  <a
-                    className="text-sm font-medium text-[#1E453E] underline"
-                    href={`/api/hr/documents/${item.id}`}
-                  >
-                    Unduh
-                  </a>
-                </div>
-              </div>
-            ))}
+          <div className="mt-4">
+            <DocumentVersionList
+              items={history.map((item) => ({
+                id: item.id,
+                title: item.displayName,
+                subtitle: `${DOC_TYPE_LABELS[item.docType]} - ${item.createdAt.toLocaleString(
+                  "id-ID"
+                )}`,
+                originalFilename: item.originalFilename,
+                previewHref: `/api/hr/documents/${item.id}?preview=1`,
+                downloadHref: `/api/hr/documents/${item.id}`,
+              }))}
+              emptyText="Riwayat unggahan akan tampil di sini."
+            />
           </div>
         )}
       </Card>

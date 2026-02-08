@@ -19,6 +19,9 @@ type NoticeTone = "success" | "error" | "info";
 const MAX_SIZE = 10 * 1024 * 1024;
 
 function getErrorMessage(error: unknown, fallback = "Gagal mengunggah.") {
+  if (error instanceof TypeError && error.message.toLowerCase().includes("fetch")) {
+    return "Koneksi unggahan terputus. Coba lagi atau periksa konfigurasi jaringan/S3.";
+  }
   if (error instanceof Error && error.message) {
     return error.message;
   }
@@ -37,6 +40,22 @@ export function DocumentUploadCard({
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const inputId = `upload-${docType.toLowerCase()}`;
+
+  async function uploadViaServer(fileToUpload: File) {
+    const formData = new FormData();
+    formData.append("docType", docType);
+    formData.append("file", fileToUpload);
+
+    const res = await fetch("/api/employee/documents/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      throw new Error(data.error || "Gagal menyimpan dokumen.");
+    }
+  }
 
   async function onUpload(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -77,25 +96,29 @@ export function DocumentUploadCard({
         uploadToken: string;
       };
 
-      const uploadRes = await fetch(presign.uploadUrl, {
-        method: "PUT",
-        headers: { "Content-Type": file.type },
-        body: file,
-      });
-      if (!uploadRes.ok) {
-        throw new Error("Gagal mengunggah ke penyimpanan.");
-      }
+      try {
+        const uploadRes = await fetch(presign.uploadUrl, {
+          method: "PUT",
+          headers: { "Content-Type": file.type },
+          body: file,
+        });
+        if (!uploadRes.ok) {
+          throw new Error("Gagal mengunggah ke penyimpanan.");
+        }
 
-      const completeRes = await fetch("/api/employee/documents/complete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ uploadToken: presign.uploadToken }),
-      });
-      if (!completeRes.ok) {
-        const data = (await completeRes.json().catch(() => ({}))) as {
-          error?: string;
-        };
-        throw new Error(data.error || "Gagal menyimpan dokumen.");
+        const completeRes = await fetch("/api/employee/documents/complete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ uploadToken: presign.uploadToken }),
+        });
+        if (!completeRes.ok) {
+          const data = (await completeRes.json().catch(() => ({}))) as {
+            error?: string;
+          };
+          throw new Error(data.error || "Gagal menyimpan dokumen.");
+        }
+      } catch {
+        await uploadViaServer(file);
       }
 
       setNotice({ tone: "success", message: "Dokumen berhasil diunggah." });
