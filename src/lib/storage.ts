@@ -106,6 +106,10 @@ export function getStorageRoot() {
 export function getStorageDriver() {
   const configuredDriver = getEnvValue("STORAGE_DRIVER").toLowerCase();
   if (configuredDriver === "local") {
+    if (hasS3EnvConfig()) {
+      // Force durable storage even when STORAGE_DRIVER is misconfigured.
+      return "s3";
+    }
     if (process.env.NODE_ENV === "test") {
       return "local";
     }

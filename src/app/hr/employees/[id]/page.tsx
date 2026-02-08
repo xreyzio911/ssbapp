@@ -333,8 +333,8 @@ export default async function EmployeeDetailPage({
                 key={doc.type}
                 className="rounded-2xl border border-[#1E453E]/10 bg-white px-4 py-4"
               >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
+                <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
+                  <div className="min-w-0">
                     <p className="text-sm font-semibold text-[#1E453E]">
                       {DOC_TYPE_LABELS[doc.type]}
                     </p>
@@ -343,8 +343,56 @@ export default async function EmployeeDetailPage({
                         ? `Terakhir: ${latest.createdAt.toLocaleDateString("id-ID")}`
                         : "Belum ada file"}
                     </p>
+                    {docVersions.length > 0 ? (
+                      <div className="mt-3 space-y-2">
+                        {docVersions.map(
+                          (version: {
+                            id: string;
+                            docType: string;
+                            originalFilename: string;
+                            storedFilename: string;
+                            createdAt: Date;
+                          }) => (
+                          <div
+                            key={version.id}
+                            className="flex flex-wrap items-center justify-between gap-2 text-xs text-[#6c6f6e]"
+                          >
+                            <span className="min-w-0 break-all">
+                              {buildEmployeeStoredFilename(
+                                employee.name,
+                                version.docType,
+                                path.extname(
+                                  version.storedFilename || version.originalFilename || ""
+                                ) || ".bin",
+                                version.createdAt
+                              )} - {version.createdAt.toLocaleString("id-ID")}
+                            </span>
+                            <div className="flex items-center gap-3">
+                              <a
+                                className="text-[#1E453E] underline"
+                                href={`/api/hr/documents/${version.id}?preview=1`}
+                                target="_blank"
+                                rel="noreferrer noopener"
+                              >
+                                Pratinjau
+                              </a>
+                              <a
+                                className="text-[#1E453E] underline"
+                                href={`/api/hr/documents/${version.id}`}
+                              >
+                                Unduh
+                              </a>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-3 text-xs text-[#6c6f6e]">
+                        Belum ada riwayat unggahan.
+                      </p>
+                    )}
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="space-y-2 lg:justify-self-end lg:w-[340px]">
                     <Badge tone={tone}>{status}</Badge>
                     <DocStatusToggle
                       employeeId={employee.id}
@@ -354,50 +402,6 @@ export default async function EmployeeDetailPage({
                     />
                   </div>
                 </div>
-                {docVersions.length > 0 ? (
-                  <div className="mt-3 space-y-2">
-                    {docVersions.map(
-                      (version: {
-                        id: string;
-                        docType: string;
-                        originalFilename: string;
-                        storedFilename: string;
-                        createdAt: Date;
-                      }) => (
-                      <div
-                        key={version.id}
-                        className="flex flex-wrap items-center justify-between gap-2 text-xs text-[#6c6f6e]"
-                      >
-                        <span>
-                          {buildEmployeeStoredFilename(
-                            employee.name,
-                            version.docType,
-                            path.extname(
-                              version.storedFilename || version.originalFilename || ""
-                            ) || ".bin",
-                            version.createdAt
-                          )} - {version.createdAt.toLocaleString("id-ID")}
-                        </span>
-                        <div className="flex items-center gap-3">
-                          <a
-                            className="text-[#1E453E] underline"
-                            href={`/api/hr/documents/${version.id}?preview=1`}
-                            target="_blank"
-                            rel="noreferrer noopener"
-                          >
-                            Pratinjau
-                          </a>
-                          <a
-                            className="text-[#1E453E] underline"
-                            href={`/api/hr/documents/${version.id}`}
-                          >
-                            Unduh
-                          </a>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
               </div>
             );
           })}
