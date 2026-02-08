@@ -8,7 +8,7 @@ import path from "path";
 const MAX_SIZE = 2 * 1024 * 1024;
 const ALLOWED_MIME = ["image/png", "image/jpeg"];
 
-export async function GET(_req: NextRequest) {
+export async function GET() {
   const user = await getSessionUser();
   if (!user || user.role !== UserRole.EMPLOYEE) {
     return NextResponse.json({ error: "Tidak diizinkan." }, { status: 401 });

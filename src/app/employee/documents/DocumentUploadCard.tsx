@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { InlineNotice } from "@/components/ui/inline-notice";
 
 type Props = {
   docType: string;
@@ -12,8 +13,17 @@ type Props = {
   lastUploaded?: string;
 };
 
+type NoticeTone = "success" | "error" | "info";
+
 const MAX_SIZE = 10 * 1024 * 1024;
 const FALLBACK_ERROR = "STORAGE_NOT_S3";
+
+function getErrorMessage(error: unknown, fallback = "Gagal mengunggah.") {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return fallback;
+}
 
 export function DocumentUploadCard({
   docType,
@@ -22,15 +32,33 @@ export function DocumentUploadCard({
   lastUploaded,
 }: Props) {
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ tone: NoticeTone; message: string } | null>(null);
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const inputId = `upload-${docType.toLowerCase()}`;
+
+  async function uploadLocal(fileToUpload: File) {
+    const formData = new FormData();
+    formData.append("docType", docType);
+    formData.append("file", fileToUpload);
+
+    const res = await fetch("/api/employee/documents/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      throw new Error(data.error || "Gagal mengunggah.");
+    }
+  }
 
   async function onUpload(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
+
     if (file.size > MAX_SIZE) {
-      setMessage("Ukuran file maksimal 10MB.");
+      setNotice({ tone: "error", message: "Ukuran file maksimal 10MB." });
       if (inputRef.current) {
         inputRef.current.value = "";
       }
@@ -38,7 +66,7 @@ export function DocumentUploadCard({
     }
 
     setLoading(true);
-    setMessage(null);
+    setNotice(null);
 
     try {
       const presignRes = await fetch("/api/employee/documents/presign", {
@@ -53,51 +81,58 @@ export function DocumentUploadCard({
       });
 
       if (presignRes.ok) {
-        const presign = await presignRes.json();
-        const uploadRes = await fetch(presign.uploadUrl, {
-          method: "PUT",
-          headers: { "Content-Type": file.type },
-          body: file,
-        });
-        if (!uploadRes.ok) {
-          throw new Error("Gagal mengunggah ke penyimpanan.");
+        const presign = (await presignRes.json()) as {
+          uploadUrl: string;
+          uploadToken: string;
+        };
+
+        try {
+          const uploadRes = await fetch(presign.uploadUrl, {
+            method: "PUT",
+            headers: { "Content-Type": file.type },
+            body: file,
+          });
+
+          if (!uploadRes.ok) {
+            throw new Error("Gagal mengunggah ke penyimpanan.");
+          }
+
+          const completeRes = await fetch("/api/employee/documents/complete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ uploadToken: presign.uploadToken }),
+          });
+
+          if (!completeRes.ok) {
+            const data = (await completeRes.json().catch(() => ({}))) as {
+              error?: string;
+            };
+            throw new Error(data.error || "Gagal menyimpan dokumen.");
+          }
+        } catch {
+          await uploadLocal(file);
         }
-        const completeRes = await fetch("/api/employee/documents/complete", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ uploadToken: presign.uploadToken }),
-        });
-        if (!completeRes.ok) {
-          const data = await completeRes.json();
-          throw new Error(data.error || "Gagal menyimpan dokumen.");
+      } else {
+        const presignError = (await presignRes.json().catch(() => ({}))) as {
+          error?: string;
+        };
+
+        if (presignError.error !== FALLBACK_ERROR) {
+          throw new Error(presignError.error || "Gagal menyiapkan unggahan.");
         }
-        setMessage("Berhasil diunggah.");
-        router.refresh();
-        return;
+
+        await uploadLocal(file);
       }
 
-      const presignError = await presignRes.json().catch(() => ({}));
-      if (presignError?.error !== FALLBACK_ERROR) {
-        throw new Error(presignError?.error || "Gagal menyiapkan unggahan.");
-      }
-
-      const formData = new FormData();
-      formData.append("docType", docType);
-      formData.append("file", file);
-      const res = await fetch("/api/employee/documents/upload", {
-        method: "POST",
-        body: formData,
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Gagal mengunggah.");
-      }
-      setMessage("Berhasil diunggah.");
+      setNotice({ tone: "success", message: "Dokumen berhasil diunggah." });
       router.refresh();
-    } catch (err: any) {
-      setMessage(err?.message || "Gagal mengunggah.");
+    } catch (error: unknown) {
+      setNotice({ tone: "error", message: getErrorMessage(error) });
     } finally {
       setLoading(false);
+      if (inputRef.current) {
+        inputRef.current.value = "";
+      }
     }
   }
 
@@ -115,15 +150,17 @@ export function DocumentUploadCard({
             status === "Sudah diunggah"
               ? "green"
               : status === "Perlu pembaruan"
-              ? "yellow"
-              : "gray"
+                ? "yellow"
+                : "gray"
           }
         >
           {status}
         </Badge>
       </div>
+
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <input
+          id={inputId}
           ref={inputRef}
           type="file"
           className="hidden"
@@ -134,18 +171,24 @@ export function DocumentUploadCard({
         <Button
           type="button"
           variant="secondary"
-          disabled={loading}
+          isLoading={loading}
+          loadingText="Mengunggah..."
+          aria-controls={inputId}
           onClick={() => inputRef.current?.click()}
         >
-          {loading ? "Mengunggah..." : "Unggah / Ganti"}
+          Unggah / Ganti
         </Button>
-        {message ? (
-          <span className="text-xs text-[#1E453E]">{message}</span>
-        ) : null}
       </div>
-      <p className="mt-2 text-[11px] text-[#6c6f6e]">
-        Maksimal 10MB. PDF/JPG/PNG.
-      </p>
+
+      {notice ? (
+        <InlineNotice
+          className="mt-3"
+          tone={notice.tone}
+          message={notice.message}
+        />
+      ) : null}
+
+      <p className="mt-2 text-xs text-[#6c6f6e]">Maksimal 10MB. PDF/JPG/PNG.</p>
     </div>
   );
 }

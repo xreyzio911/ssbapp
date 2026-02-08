@@ -2,9 +2,29 @@
 
 :root {
   --color-primary: #1e453e;
+  --color-primary-strong: #173730;
   --color-accent: #d4af37;
   --color-ink: #101211;
-  --color-muted: #6c6f6e;
+  --color-muted: #5f6663;
+
+  --color-surface-page: #f2f4f2;
+  --color-surface-card: #ffffff;
+  --color-surface-elevated: #f7f7f2;
+  --color-border-subtle: rgba(30, 69, 62, 0.14);
+
+  --color-status-success-fg: #1e453e;
+  --color-status-success-bg: rgba(30, 69, 62, 0.1);
+  --color-status-error-fg: #9f1d1d;
+  --color-status-error-bg: #fde8e8;
+  --color-status-info-fg: #1e453e;
+  --color-status-info-bg: rgba(212, 175, 55, 0.2);
+
+  --ring-focus: rgba(30, 69, 62, 0.35);
+
+  --radius-sm: 0.75rem;
+  --radius-md: 1rem;
+  --radius-lg: 1.5rem;
+  --radius-xl: 2rem;
 }
 
 @theme inline {
@@ -20,9 +40,17 @@ body {
       rgba(212, 175, 55, 0.12),
       transparent 45%
     ),
-    linear-gradient(180deg, #f7f7f2 0%, #f2f4f2 45%, #f7f6f1 100%);
+    linear-gradient(180deg, #f7f7f2 0%, var(--color-surface-page) 45%, #f7f6f1 100%);
   color: var(--color-ink);
   font-family: var(--font-plus-jakarta), sans-serif;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  outline-color: var(--ring-focus);
 }
 
 button {

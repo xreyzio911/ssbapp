@@ -1,4 +1,4 @@
-import { requireRole } from "@/lib/auth";
+﻿import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { DOC_TYPES, DOC_TYPE_LABELS } from "@/lib/constants";
 import { Card } from "@/components/ui/card";
@@ -103,7 +103,7 @@ export default async function EmployeeDetailPage({
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link className="text-sm text-[#1E453E] underline" href="/hr#karyawan">
+        <Link className="text-sm text-[#1E453E] underline" href="/hr">
           Kembali ke daftar karyawan
         </Link>
         <div className="text-sm text-[#6c6f6e]">

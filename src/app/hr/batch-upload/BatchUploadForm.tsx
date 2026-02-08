@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { InlineNotice } from "@/components/ui/inline-notice";
 
 type Employee = {
   id: string;
@@ -22,6 +24,8 @@ type SpecificFile = {
   employeeId: string;
 };
 
+type NoticeTone = "success" | "error" | "info";
+
 const MAX_SIZE = 10 * 1024 * 1024;
 
 function stripExtension(name: string) {
@@ -31,27 +35,25 @@ function stripExtension(name: string) {
 export function BatchUploadForm({ employees }: { employees: Employee[] }) {
   const [mode, setMode] = useState<UploadMode>("SHARED");
   const [selected, setSelected] = useState<string[]>([]);
-  const [fileType, setFileType] = useState<"GENERAL" | "AGREEMENT">(
-    "GENERAL"
-  );
+  const [fileType, setFileType] = useState<"GENERAL" | "AGREEMENT">("GENERAL");
   const [title, setTitle] = useState("");
   const [sharedFile, setSharedFile] = useState<File | null>(null);
   const [specificFiles, setSpecificFiles] = useState<SpecificFile[]>([]);
-  const [message, setMessage] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ tone: NoticeTone; message: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
   const [positionFilter, setPositionFilter] = useState("ALL");
   const [locationFilter, setLocationFilter] = useState("ALL");
-  const [sortBy, setSortBy] = useState<
-    "NAME_ASC" | "NAME_DESC" | "POSITION" | "LOCATION"
-  >("NAME_ASC");
+  const [sortBy, setSortBy] = useState<"NAME_ASC" | "NAME_DESC" | "POSITION" | "LOCATION">(
+    "NAME_ASC"
+  );
   const [fileInputKey, setFileInputKey] = useState(0);
 
   const positions = useMemo(() => {
     const unique = new Set<string>();
-    employees.forEach((emp) => {
-      if (emp.position) {
-        unique.add(emp.position);
+    employees.forEach((employee) => {
+      if (employee.position) {
+        unique.add(employee.position);
       }
     });
     return Array.from(unique).sort((a, b) => a.localeCompare(b, "id"));
@@ -59,9 +61,9 @@ export function BatchUploadForm({ employees }: { employees: Employee[] }) {
 
   const locations = useMemo(() => {
     const unique = new Set<string>();
-    employees.forEach((emp) => {
-      if (emp.workLocation) {
-        unique.add(emp.workLocation);
+    employees.forEach((employee) => {
+      if (employee.workLocation) {
+        unique.add(employee.workLocation);
       }
     });
     return Array.from(unique).sort((a, b) => a.localeCompare(b, "id"));
@@ -70,16 +72,17 @@ export function BatchUploadForm({ employees }: { employees: Employee[] }) {
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
     let list = employees.filter(
-      (emp) =>
-        emp.name.toLowerCase().includes(q) ||
-        emp.username.toLowerCase().includes(q) ||
-        (emp.email ? emp.email.toLowerCase().includes(q) : false)
+      (employee) =>
+        employee.name.toLowerCase().includes(q) ||
+        employee.username.toLowerCase().includes(q) ||
+        (employee.email ? employee.email.toLowerCase().includes(q) : false)
     );
+
     if (positionFilter !== "ALL") {
-      list = list.filter((emp) => emp.position === positionFilter);
+      list = list.filter((employee) => employee.position === positionFilter);
     }
     if (locationFilter !== "ALL") {
-      list = list.filter((emp) => emp.workLocation === locationFilter);
+      list = list.filter((employee) => employee.workLocation === locationFilter);
     }
 
     const byName = (a: Employee, b: Employee) =>
@@ -107,8 +110,21 @@ export function BatchUploadForm({ employees }: { employees: Employee[] }) {
     } else if (sortBy === "LOCATION") {
       sorted.sort(byLocation);
     }
+
     return sorted;
-  }, [employees, query, positionFilter, locationFilter, sortBy]);
+  }, [employees, locationFilter, positionFilter, query, sortBy]);
+
+  function showError(message: string) {
+    setNotice({ tone: "error", message });
+  }
+
+  function showSuccess(message: string) {
+    setNotice({ tone: "success", message });
+  }
+
+  function clearNotice() {
+    setNotice(null);
+  }
 
   function handleModeChange(nextMode: UploadMode) {
     setMode(nextMode);
@@ -120,7 +136,7 @@ export function BatchUploadForm({ employees }: { employees: Employee[] }) {
     setPositionFilter("ALL");
     setLocationFilter("ALL");
     setSortBy("NAME_ASC");
-    setMessage(null);
+    clearNotice();
     setFileInputKey((prev) => prev + 1);
   }
 
@@ -131,11 +147,11 @@ export function BatchUploadForm({ employees }: { employees: Employee[] }) {
   }
 
   function selectAllEmployees() {
-    setSelected(employees.map((emp) => emp.id));
+    setSelected(employees.map((employee) => employee.id));
   }
 
   function selectFilteredEmployees() {
-    setSelected(filtered.map((emp) => emp.id));
+    setSelected(filtered.map((employee) => employee.id));
   }
 
   function clearSelection() {
@@ -145,36 +161,37 @@ export function BatchUploadForm({ employees }: { employees: Employee[] }) {
   function handleSharedFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] || null;
     if (file && file.size > MAX_SIZE) {
-      setMessage("Ukuran file maksimal 10MB.");
+      showError("Ukuran file maksimal 10MB.");
       setSharedFile(null);
       setFileInputKey((prev) => prev + 1);
       return;
     }
-    setMessage(null);
+    clearNotice();
     setSharedFile(file);
   }
 
-  function handleSpecificFilesChange(
-    event: React.ChangeEvent<HTMLInputElement>
-  ) {
+  function handleSpecificFilesChange(event: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
     const oversized = files.filter((file) => file.size > MAX_SIZE);
+
     if (oversized.length > 0) {
       const names = oversized.map((file) => file.name).join(", ");
-      setMessage(
+      showError(
         oversized.length === files.length
           ? "Semua file melebihi 10MB."
           : `File melebihi 10MB tidak akan diunggah: ${names}`
       );
     } else {
-      setMessage(null);
+      clearNotice();
     }
+
     const validFiles = files.filter((file) => file.size <= MAX_SIZE);
     if (validFiles.length === 0) {
       setSpecificFiles([]);
       setFileInputKey((prev) => prev + 1);
       return;
     }
+
     const mapped = validFiles.map((file, index) => ({
       id: `${file.name}-${file.lastModified}-${index}`,
       file,
@@ -205,35 +222,37 @@ export function BatchUploadForm({ employees }: { employees: Employee[] }) {
 
     if (mode === "SHARED") {
       if (!sharedFile) {
-        setMessage("File belum dipilih.");
+        showError("File belum dipilih.");
         return;
       }
       if (sharedFile.size > MAX_SIZE) {
-        setMessage("Ukuran file maksimal 10MB.");
+        showError("Ukuran file maksimal 10MB.");
         return;
       }
       if (selected.length === 0) {
-        setMessage("Pilih minimal satu karyawan.");
+        showError("Pilih minimal satu karyawan.");
         return;
       }
+
       const finalTitle = title.trim() || sharedFile.name;
       formData.append("title", finalTitle);
       formData.append("employeeIds", JSON.stringify(selected));
       formData.append("file", sharedFile);
     } else {
       if (specificFiles.length === 0) {
-        setMessage("Pilih minimal satu file.");
+        showError("Pilih minimal satu file.");
         return;
       }
       if (specificFiles.some((item) => item.file.size > MAX_SIZE)) {
-        setMessage("Ukuran file maksimal 10MB.");
+        showError("Ukuran file maksimal 10MB.");
         return;
       }
       const missingEmployee = specificFiles.find((item) => !item.employeeId);
       if (missingEmployee) {
-        setMessage("Semua file harus dipasangkan ke karyawan.");
+        showError("Semua file harus dipasangkan ke karyawan.");
         return;
       }
+
       const assignments = specificFiles.map((item, index) => ({
         index,
         employeeId: item.employeeId,
@@ -246,83 +265,88 @@ export function BatchUploadForm({ employees }: { employees: Employee[] }) {
     }
 
     setLoading(true);
-    setMessage(null);
+    clearNotice();
 
-    const res = await fetch("/api/hr/files/upload", {
-      method: "POST",
-      body: formData,
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      setMessage(data.error || "Gagal mengunggah.");
-    } else {
-      setMessage("File berhasil diunggah dan dikirim.");
+    try {
+      const res = await fetch("/api/hr/files/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+
+      if (!res.ok) {
+        showError(data.error || "Gagal mengunggah.");
+        return;
+      }
+
+      showSuccess("File berhasil diunggah dan dikirim.");
       setSelected([]);
       setTitle("");
       setSharedFile(null);
       setSpecificFiles([]);
       setFileInputKey((prev) => prev + 1);
+    } catch {
+      showError("Gagal mengunggah. Coba lagi.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form onSubmit={onSubmit} className="space-y-4" noValidate>
       <div className="grid gap-3 md:grid-cols-2">
         <div>
-          <label className="mb-2 block text-sm font-medium text-[#1E453E]">
+          <label htmlFor="batch-mode" className="mb-2 block text-sm font-medium text-[#1E453E]">
             Mode pengiriman
           </label>
-          <select
+          <Select
+            id="batch-mode"
             value={mode}
-            onChange={(e) => handleModeChange(e.target.value as UploadMode)}
-            className="w-full rounded-2xl border border-[#1E453E]/15 bg-white px-4 py-2 text-sm"
+            onChange={(event) => handleModeChange(event.target.value as UploadMode)}
           >
             <option value="SHARED">Dokumen umum (banyak karyawan)</option>
-            <option value="SPECIFIC">
-              Dokumen spesifik (satu file per karyawan)
-            </option>
-          </select>
+            <option value="SPECIFIC">Dokumen spesifik (satu file per karyawan)</option>
+          </Select>
           <p className="mt-1 text-xs text-[#6c6f6e]">
             Gunakan mode spesifik untuk dokumen yang berbeda tiap karyawan.
           </p>
         </div>
+
         <div>
-          <label className="mb-2 block text-sm font-medium text-[#1E453E]">
+          <label htmlFor="batch-title" className="mb-2 block text-sm font-medium text-[#1E453E]">
             Judul dokumen
           </label>
           <Input
+            id="batch-title"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(event) => setTitle(event.target.value)}
             disabled={mode === "SPECIFIC"}
-            placeholder={
-              mode === "SPECIFIC" ? "Judul per file diatur di bawah" : ""
-            }
+            placeholder={mode === "SPECIFIC" ? "Judul per file diatur di bawah" : ""}
           />
         </div>
+
         <div>
-          <label className="mb-2 block text-sm font-medium text-[#1E453E]">
+          <label htmlFor="batch-file-type" className="mb-2 block text-sm font-medium text-[#1E453E]">
             Jenis
           </label>
-          <select
+          <Select
+            id="batch-file-type"
             value={fileType}
-            onChange={(e) =>
-              setFileType(e.target.value as "GENERAL" | "AGREEMENT")
-            }
-            className="w-full rounded-2xl border border-[#1E453E]/15 bg-white px-4 py-2 text-sm"
+            onChange={(event) => setFileType(event.target.value as "GENERAL" | "AGREEMENT")}
           >
             <option value="GENERAL">Dokumen HR</option>
             <option value="AGREEMENT">Perjanjian (PDF)</option>
-          </select>
+          </Select>
         </div>
       </div>
 
       <div>
-        <label className="mb-2 block text-sm font-medium text-[#1E453E]">
+        <label htmlFor="batch-file" className="mb-2 block text-sm font-medium text-[#1E453E]">
           File
         </label>
         {mode === "SHARED" ? (
           <Input
+            id="batch-file"
             key={`shared-${fileInputKey}`}
             type="file"
             accept="application/pdf,image/jpeg,image/png"
@@ -330,6 +354,7 @@ export function BatchUploadForm({ employees }: { employees: Employee[] }) {
           />
         ) : (
           <Input
+            id="batch-file"
             key={`specific-${fileInputKey}`}
             type="file"
             accept="application/pdf,image/jpeg,image/png"
@@ -337,125 +362,114 @@ export function BatchUploadForm({ employees }: { employees: Employee[] }) {
             onChange={handleSpecificFilesChange}
           />
         )}
-        <p className="mt-1 text-xs text-[#6c6f6e]">
-          Maksimal 10MB. Perjanjian wajib PDF.
-        </p>
+        <p className="mt-1 text-xs text-[#6c6f6e]">Maksimal 10MB. Perjanjian wajib PDF.</p>
       </div>
 
       {mode === "SHARED" ? (
-        <div>
-          <label className="mb-2 block text-sm font-medium text-[#1E453E]">
+        <div className="space-y-3">
+          <label htmlFor="batch-employee-search" className="block text-sm font-medium text-[#1E453E]">
             Pilih karyawan
           </label>
           <Input
+            id="batch-employee-search"
             placeholder="Cari karyawan"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(event) => setQuery(event.target.value)}
           />
-          <div className="mt-3 grid gap-3 md:grid-cols-3">
+
+          <div className="grid gap-3 md:grid-cols-3">
             <div>
-              <label className="mb-1 block text-xs text-[#6c6f6e]">
+              <label htmlFor="batch-filter-position" className="mb-1 block text-xs text-[#6c6f6e]">
                 Filter jabatan
               </label>
-              <select
+              <Select
+                id="batch-filter-position"
                 value={positionFilter}
-                onChange={(e) => setPositionFilter(e.target.value)}
-                className="w-full rounded-2xl border border-[#1E453E]/15 bg-white px-4 py-2 text-sm"
+                onChange={(event) => setPositionFilter(event.target.value)}
               >
                 <option value="ALL">Semua jabatan</option>
-                {positions.map((pos) => (
-                  <option key={pos} value={pos}>
-                    {pos}
+                {positions.map((position) => (
+                  <option key={position} value={position}>
+                    {position}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
+
             <div>
-              <label className="mb-1 block text-xs text-[#6c6f6e]">
+              <label htmlFor="batch-filter-location" className="mb-1 block text-xs text-[#6c6f6e]">
                 Filter lokasi
               </label>
-              <select
+              <Select
+                id="batch-filter-location"
                 value={locationFilter}
-                onChange={(e) => setLocationFilter(e.target.value)}
-                className="w-full rounded-2xl border border-[#1E453E]/15 bg-white px-4 py-2 text-sm"
+                onChange={(event) => setLocationFilter(event.target.value)}
               >
                 <option value="ALL">Semua lokasi</option>
-                {locations.map((loc) => (
-                  <option key={loc} value={loc}>
-                    {loc}
+                {locations.map((location) => (
+                  <option key={location} value={location}>
+                    {location}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
+
             <div>
-              <label className="mb-1 block text-xs text-[#6c6f6e]">Urutkan</label>
-              <select
+              <label htmlFor="batch-sort" className="mb-1 block text-xs text-[#6c6f6e]">
+                Urutkan
+              </label>
+              <Select
+                id="batch-sort"
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                className="w-full rounded-2xl border border-[#1E453E]/15 bg-white px-4 py-2 text-sm"
+                onChange={(event) => setSortBy(event.target.value as typeof sortBy)}
               >
                 <option value="NAME_ASC">Nama (A-Z)</option>
                 <option value="NAME_DESC">Nama (Z-A)</option>
                 <option value="POSITION">Jabatan</option>
                 <option value="LOCATION">Lokasi kerja</option>
-              </select>
+              </Select>
             </div>
           </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={selectAllEmployees}
-              className="rounded-full border border-[#1E453E]/20 px-4 py-2 text-xs font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
-            >
+
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="ghost" onClick={selectAllEmployees}>
               Pilih semua
-            </button>
-            <button
-              type="button"
-              onClick={selectFilteredEmployees}
-              className="rounded-full border border-[#1E453E]/20 px-4 py-2 text-xs font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
-            >
+            </Button>
+            <Button type="button" variant="ghost" onClick={selectFilteredEmployees}>
               Pilih hasil filter
-            </button>
+            </Button>
             {selected.length > 0 ? (
-              <button
-                type="button"
-                onClick={clearSelection}
-                className="rounded-full border border-[#1E453E]/20 px-4 py-2 text-xs font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
-              >
+              <Button type="button" variant="ghost" onClick={clearSelection}>
                 Bersihkan
-              </button>
+              </Button>
             ) : null}
           </div>
-          <div className="mt-3 max-h-56 space-y-2 overflow-auto rounded-2xl border border-[#1E453E]/10 bg-white p-3">
-            {filtered.map((emp) => (
-              <label key={emp.id} className="flex items-center gap-2 text-sm">
+
+          <div className="max-h-56 space-y-2 overflow-auto rounded-2xl border border-[#1E453E]/10 bg-white p-3">
+            {filtered.map((employee) => (
+              <label key={employee.id} className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
-                  checked={selected.includes(emp.id)}
-                  onChange={() => toggleEmployee(emp.id)}
+                  checked={selected.includes(employee.id)}
+                  onChange={() => toggleEmployee(employee.id)}
                 />
                 <span>
-                  {emp.name} - {emp.email ?? "Tanpa email"} - {emp.username}
-                  {emp.position ? ` - ${emp.position}` : ""}
-                  {emp.workLocation ? ` - ${emp.workLocation}` : ""}
+                  {employee.name} - {employee.email ?? "Tanpa email"} - {employee.username}
+                  {employee.position ? ` - ${employee.position}` : ""}
+                  {employee.workLocation ? ` - ${employee.workLocation}` : ""}
                 </span>
               </label>
             ))}
-            {filtered.length === 0 ? (
-              <p className="text-xs text-[#6c6f6e]">Tidak ada karyawan.</p>
-            ) : null}
+
+            {filtered.length === 0 ? <p className="text-xs text-[#6c6f6e]">Tidak ada karyawan.</p> : null}
           </div>
         </div>
       ) : (
         <div>
-          <label className="mb-2 block text-sm font-medium text-[#1E453E]">
-            Pasangkan file ke karyawan
-          </label>
+          <label className="mb-2 block text-sm font-medium text-[#1E453E]">Pasangkan file ke karyawan</label>
           <div className="space-y-3">
             {specificFiles.length === 0 ? (
-              <p className="text-xs text-[#6c6f6e]">
-                Belum ada file yang dipilih.
-              </p>
+              <p className="text-xs text-[#6c6f6e]">Belum ada file yang dipilih.</p>
             ) : (
               specificFiles.map((item) => (
                 <div
@@ -463,44 +477,39 @@ export function BatchUploadForm({ employees }: { employees: Employee[] }) {
                   className="grid gap-3 rounded-2xl border border-[#1E453E]/10 bg-white p-3 md:grid-cols-[1.4fr_1fr_1fr]"
                 >
                   <div>
-                    <p className="text-sm font-medium text-[#1E453E]">
-                      {item.file.name}
-                    </p>
-                    <p className="text-xs text-[#6c6f6e]">
-                      {(item.file.size / 1024 / 1024).toFixed(2)} MB
-                    </p>
+                    <p className="text-sm font-medium text-[#1E453E]">{item.file.name}</p>
+                    <p className="text-xs text-[#6c6f6e]">{(item.file.size / 1024 / 1024).toFixed(2)} MB</p>
                   </div>
+
                   <div>
-                    <label className="mb-1 block text-xs text-[#6c6f6e]">
+                    <label htmlFor={`specific-title-${item.id}`} className="mb-1 block text-xs text-[#6c6f6e]">
                       Judul
                     </label>
                     <Input
+                      id={`specific-title-${item.id}`}
                       value={item.title}
-                      onChange={(e) =>
-                        updateSpecificTitle(item.id, e.target.value)
-                      }
+                      onChange={(event) => updateSpecificTitle(item.id, event.target.value)}
                     />
                   </div>
+
                   <div>
-                    <label className="mb-1 block text-xs text-[#6c6f6e]">
+                    <label htmlFor={`specific-employee-${item.id}`} className="mb-1 block text-xs text-[#6c6f6e]">
                       Karyawan
                     </label>
-                    <select
+                    <Select
+                      id={`specific-employee-${item.id}`}
                       value={item.employeeId}
-                      onChange={(e) =>
-                        updateSpecificEmployee(item.id, e.target.value)
-                      }
-                      className="w-full rounded-2xl border border-[#1E453E]/15 bg-white px-4 py-2 text-sm"
+                      onChange={(event) => updateSpecificEmployee(item.id, event.target.value)}
                     >
                       <option value="">Pilih karyawan</option>
-                      {employees.map((emp) => (
-                        <option key={emp.id} value={emp.id}>
-                          {emp.name} - {emp.email ?? "Tanpa email"} - {emp.username}
-                          {emp.position ? ` - ${emp.position}` : ""}
-                          {emp.workLocation ? ` - ${emp.workLocation}` : ""}
+                      {employees.map((employee) => (
+                        <option key={employee.id} value={employee.id}>
+                          {employee.name} - {employee.email ?? "Tanpa email"} - {employee.username}
+                          {employee.position ? ` - ${employee.position}` : ""}
+                          {employee.workLocation ? ` - ${employee.workLocation}` : ""}
                         </option>
                       ))}
-                    </select>
+                    </Select>
                   </div>
                 </div>
               ))
@@ -509,9 +518,10 @@ export function BatchUploadForm({ employees }: { employees: Employee[] }) {
         </div>
       )}
 
-      {message ? <p className="text-sm text-[#1E453E]">{message}</p> : null}
-      <Button type="submit" disabled={loading}>
-        {loading ? "Mengunggah..." : "Kirim ke karyawan"}
+      {notice ? <InlineNotice tone={notice.tone} message={notice.message} /> : null}
+
+      <Button type="submit" isLoading={loading} loadingText="Mengunggah...">
+        Kirim ke karyawan
       </Button>
     </form>
   );

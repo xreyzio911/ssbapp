@@ -1,9 +1,9 @@
-import { requireRole } from "@/lib/auth";
+﻿import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { UserRole } from "@/lib/enums";
-import { EmployeeTabsContent } from "./EmployeeTabsContent";
+import { EmployeeOverviewSection } from "./_sections/EmployeeOverviewSection";
 
-export default async function EmployeeDashboard() {
+export default async function EmployeeDashboardPage() {
   const user = await requireRole(UserRole.EMPLOYEE);
 
   const [versions, statuses, assignments] = await Promise.all([
@@ -18,26 +18,22 @@ export default async function EmployeeDashboard() {
     }),
     prisma.hrFileAssignment.findMany({
       where: { employeeId: user.id },
-      include: { hrFile: true },
-      orderBy: { assignedAt: "desc" },
+      select: {
+        id: true,
+        status: true,
+        assignedAt: true,
+        signedAt: true,
+        hrFile: {
+          select: {
+            fileType: true,
+            title: true,
+            mimeType: true,
+            size: true,
+          },
+        },
+      },
     }),
   ]);
-
-  const safeUser = {
-    name: user.name,
-    username: user.username,
-    email: user.email,
-    position: user.position,
-    workLocation: user.workLocation,
-    phone: user.phone,
-    address: user.address,
-    dob: user.dob ? user.dob.toISOString().slice(0, 10) : null,
-    nik: user.nik,
-    hasSignature: Boolean(user.signaturePath),
-    signatureUpdatedAt: user.signatureUpdatedAt
-      ? user.signatureUpdatedAt.toISOString()
-      : null,
-  };
 
   const safeVersions = versions.map((version) => ({
     docType: version.docType,
@@ -63,8 +59,7 @@ export default async function EmployeeDashboard() {
   }));
 
   return (
-    <EmployeeTabsContent
-      user={safeUser}
+    <EmployeeOverviewSection
       versions={safeVersions}
       statuses={safeStatuses}
       assignments={safeAssignments}

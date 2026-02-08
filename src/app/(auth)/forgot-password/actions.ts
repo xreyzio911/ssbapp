@@ -10,7 +10,7 @@ const schema = z.object({
 });
 
 export async function forgotPasswordAction(
-  _prevState: { message?: string } | null,
+  _prevState: { message?: string; error?: string } | null,
   formData: FormData
 ) {
   const payload = {
@@ -18,7 +18,7 @@ export async function forgotPasswordAction(
   };
   const parsed = schema.safeParse(payload);
   if (!parsed.success) {
-    return { message: "Email tidak valid." };
+    return { error: "Email tidak valid." };
   }
 
   const user = await prisma.user.findUnique({

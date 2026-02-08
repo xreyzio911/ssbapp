@@ -1,16 +1,16 @@
-import { cn } from "@/lib/utils";
-import type { InputHTMLAttributes } from "react";
+﻿import { cn } from "@/lib/utils";
+import type { SelectHTMLAttributes } from "react";
 
-type InputProps = InputHTMLAttributes<HTMLInputElement> & {
+type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
   invalid?: boolean;
 };
 
-export function Input({ className, invalid = false, ...props }: InputProps) {
+export function Select({ className, invalid = false, ...props }: SelectProps) {
   return (
-    <input
+    <select
       className={cn(
         "w-full rounded-2xl border bg-white px-4 py-2 text-sm text-[#1B1B1B] shadow-sm transition",
-        "placeholder:text-[#7a7a7a] focus:outline-none focus:ring-2 focus:ring-[#1E453E]/20",
+        "focus:outline-none focus:ring-2 focus:ring-[#1E453E]/20",
         invalid
           ? "border-red-400 focus:border-red-500 focus:ring-red-200"
           : "border-[#1E453E]/15 focus:border-[#1E453E]",
@@ -21,3 +21,4 @@ export function Input({ className, invalid = false, ...props }: InputProps) {
     />
   );
 }
+

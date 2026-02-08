@@ -3,7 +3,8 @@
 import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { markDocNeedsUpdateAction } from "./actions";
-import { Button } from "@/components/ui/button";
+import { FormSubmitButton } from "@/components/ui/form-submit-button";
+import { InlineNotice } from "@/components/ui/inline-notice";
 
 type Props = {
   employeeId: string;
@@ -26,12 +27,13 @@ export function DocStatusToggle({ employeeId, docType, needsUpdate }: Props) {
       <input type="hidden" name="employeeId" value={employeeId} />
       <input type="hidden" name="docType" value={docType} />
       <input type="hidden" name="needsUpdate" value={(!needsUpdate).toString()} />
-      <Button type="submit" variant="ghost">
+
+      <FormSubmitButton variant="ghost" pendingText="Menyimpan...">
         {needsUpdate ? "Tandai lengkap" : "Minta pembaruan"}
-      </Button>
-      {state?.message ? (
-        <span className="text-xs text-[#1E453E]">{state.message}</span>
-      ) : null}
+      </FormSubmitButton>
+
+      {state?.message ? <InlineNotice tone="success" message={state.message} /> : null}
+      {state?.error ? <InlineNotice tone="error" message={state.error} /> : null}
     </form>
   );
 }
