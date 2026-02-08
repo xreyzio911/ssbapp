@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -29,6 +30,7 @@ export function EmployeeList({ employees }: { employees: Employee[] }) {
   const [copyNotice, setCopyNotice] = useState<{ tone: NoticeTone; message: string } | null>(null);
 
   const dialogTitleId = "detail-cepat-title";
+  const canUseDom = typeof window !== "undefined" && typeof document !== "undefined";
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const lastFocusRef = useRef<HTMLElement | null>(null);
@@ -104,9 +106,14 @@ export function EmployeeList({ employees }: { employees: Employee[] }) {
       return;
     }
 
-    const previousOverflow = document.body.style.overflow;
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
     document.body.style.overflow = "hidden";
-    closeButtonRef.current?.focus();
+    document.documentElement.style.overflow = "hidden";
+
+    requestAnimationFrame(() => {
+      closeButtonRef.current?.focus();
+    });
 
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
@@ -141,7 +148,8 @@ export function EmployeeList({ employees }: { employees: Employee[] }) {
     document.addEventListener("keydown", onKeyDown);
 
     return () => {
-      document.body.style.overflow = previousOverflow;
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
       document.removeEventListener("keydown", onKeyDown);
       lastFocusRef.current?.focus();
     };
@@ -304,100 +312,107 @@ export function EmployeeList({ employees }: { employees: Employee[] }) {
       </div>
 
       {activeEmployee ? (
-        <div className="fixed inset-0 z-50">
-          <button
-            type="button"
-            aria-label="Tutup detail cepat"
-            className="absolute inset-0 bg-white/10 backdrop-blur-[2px]"
-            onClick={closeDialog}
-          />
+        canUseDom
+          ? createPortal(
+              <div className="fixed inset-0 z-[70]">
+                <button
+                  type="button"
+                  aria-label="Tutup detail cepat"
+                  className="absolute inset-0 bg-black/18 backdrop-blur-[2px]"
+                  onClick={closeDialog}
+                />
 
-          <div
-            ref={dialogRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={dialogTitleId}
-            className="absolute left-1/2 top-1/2 w-[min(92vw,520px)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl border border-white/70 bg-[#f7f7f2] p-6 shadow-[0_30px_80px_rgba(0,0,0,0.28)]"
-            style={{ maxHeight: "90vh" }}
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-[#1E453E]/60">Detail Cepat</p>
-                <h3 id={dialogTitleId} className="mt-2 text-2xl font-semibold text-[#1E453E]">
-                  {activeEmployee.name}
-                </h3>
-                <p className="text-sm text-[#6c6f6e]">{activeEmployee.email ?? "Tanpa email"}</p>
-                <p className="text-xs text-[#6c6f6e]">Username: {activeEmployee.username}</p>
-              </div>
-              <button
-                ref={closeButtonRef}
-                type="button"
-                onClick={closeDialog}
-                className="rounded-full border border-[#1E453E]/20 px-4 py-1 text-xs font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
-              >
-                Tutup
-              </button>
-            </div>
+                <div className="absolute inset-0 grid place-items-center p-4 sm:p-6">
+                  <div
+                    ref={dialogRef}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby={dialogTitleId}
+                    className="relative w-full max-w-[520px] overflow-y-auto rounded-3xl border border-white/70 bg-[#f7f7f2] p-6 shadow-[0_30px_80px_rgba(0,0,0,0.28)]"
+                    style={{ maxHeight: "90vh" }}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.3em] text-[#1E453E]/60">Detail Cepat</p>
+                        <h3 id={dialogTitleId} className="mt-2 text-2xl font-semibold text-[#1E453E]">
+                          {activeEmployee.name}
+                        </h3>
+                        <p className="text-sm text-[#6c6f6e]">{activeEmployee.email ?? "Tanpa email"}</p>
+                        <p className="text-xs text-[#6c6f6e]">Username: {activeEmployee.username}</p>
+                      </div>
+                      <button
+                        ref={closeButtonRef}
+                        type="button"
+                        onClick={closeDialog}
+                        className="rounded-full border border-[#1E453E]/20 px-4 py-1 text-xs font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
+                      >
+                        Tutup
+                      </button>
+                    </div>
 
-            <div className="mt-6 space-y-4">
-              <div className="rounded-2xl border border-[#1E453E]/10 bg-white p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-[#6c6f6e]">Informasi Kontak</p>
-                <div className="mt-3 space-y-2 text-sm text-[#1E453E]">
-                  <p>{activeEmployee.email ?? "Tanpa email"}</p>
-                  {copyNotice ? <InlineNotice tone={copyNotice.tone} message={copyNotice.message} /> : null}
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleCopyEmail(activeEmployee.email)}
-                    className="rounded-full border border-[#1E453E]/20 px-4 py-2 text-xs font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
-                  >
-                    Salin email
-                  </button>
-                  {activeEmployee.email ? (
-                    <a
-                      href={`mailto:${activeEmployee.email}`}
-                      className="rounded-full border border-[#1E453E]/20 px-4 py-2 text-xs font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
-                    >
-                      Kirim email
-                    </a>
-                  ) : (
-                    <span className="rounded-full border border-[#1E453E]/10 px-4 py-2 text-xs font-medium text-[#6c6f6e]">
-                      Email tidak tersedia
-                    </span>
-                  )}
-                </div>
-              </div>
+                    <div className="mt-6 space-y-4">
+                      <div className="rounded-2xl border border-[#1E453E]/10 bg-white p-4">
+                        <p className="text-xs uppercase tracking-[0.2em] text-[#6c6f6e]">Informasi Kontak</p>
+                        <div className="mt-3 space-y-2 text-sm text-[#1E453E]">
+                          <p>{activeEmployee.email ?? "Tanpa email"}</p>
+                          {copyNotice ? <InlineNotice tone={copyNotice.tone} message={copyNotice.message} /> : null}
+                        </div>
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleCopyEmail(activeEmployee.email)}
+                            className="rounded-full border border-[#1E453E]/20 px-4 py-2 text-xs font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
+                          >
+                            Salin email
+                          </button>
+                          {activeEmployee.email ? (
+                            <a
+                              href={`mailto:${activeEmployee.email}`}
+                              className="rounded-full border border-[#1E453E]/20 px-4 py-2 text-xs font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
+                            >
+                              Kirim email
+                            </a>
+                          ) : (
+                            <span className="rounded-full border border-[#1E453E]/10 px-4 py-2 text-xs font-medium text-[#6c6f6e]">
+                              Email tidak tersedia
+                            </span>
+                          )}
+                        </div>
+                      </div>
 
-              <div className="rounded-2xl border border-[#1E453E]/10 bg-white p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-[#6c6f6e]">Aksi Cepat</p>
-                <div className="mt-4 grid gap-2">
-                  <Link
-                    href={`/hr/employees/${activeEmployee.id}`}
-                    className="rounded-2xl border border-[#1E453E]/10 px-4 py-3 text-sm font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
-                    onClick={closeDialog}
-                  >
-                    Buka profil lengkap
-                  </Link>
-                  <Link
-                    href={`/hr/employees/${activeEmployee.id}#dokumen-pribadi`}
-                    className="rounded-2xl border border-[#1E453E]/10 px-4 py-3 text-sm font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
-                    onClick={closeDialog}
-                  >
-                    Lihat dokumen pribadi
-                  </Link>
-                  <Link
-                    href={`/hr/employees/${activeEmployee.id}#dokumen-hr`}
-                    className="rounded-2xl border border-[#1E453E]/10 px-4 py-3 text-sm font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
-                    onClick={closeDialog}
-                  >
-                    Lihat dokumen HR
-                  </Link>
+                      <div className="rounded-2xl border border-[#1E453E]/10 bg-white p-4">
+                        <p className="text-xs uppercase tracking-[0.2em] text-[#6c6f6e]">Aksi Cepat</p>
+                        <div className="mt-4 grid gap-2">
+                          <Link
+                            href={`/hr/employees/${activeEmployee.id}`}
+                            className="rounded-2xl border border-[#1E453E]/10 px-4 py-3 text-sm font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
+                            onClick={closeDialog}
+                          >
+                            Buka profil lengkap
+                          </Link>
+                          <Link
+                            href={`/hr/employees/${activeEmployee.id}#dokumen-pribadi`}
+                            className="rounded-2xl border border-[#1E453E]/10 px-4 py-3 text-sm font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
+                            onClick={closeDialog}
+                          >
+                            Lihat dokumen pribadi
+                          </Link>
+                          <Link
+                            href={`/hr/employees/${activeEmployee.id}#dokumen-hr`}
+                            className="rounded-2xl border border-[#1E453E]/10 px-4 py-3 text-sm font-medium text-[#1E453E] transition hover:bg-[#1E453E]/10"
+                            onClick={closeDialog}
+                          >
+                            Lihat dokumen HR
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
+              </div>,
+              document.body
+            )
+          : null
       ) : null}
     </>
   );

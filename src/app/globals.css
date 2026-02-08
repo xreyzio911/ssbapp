@@ -33,6 +33,11 @@
   --font-sans: var(--font-plus-jakarta);
 }
 
+html {
+  overflow-y: scroll;
+  scrollbar-gutter: stable both-edges;
+}
+
 body {
   min-height: 100vh;
   background: radial-gradient(

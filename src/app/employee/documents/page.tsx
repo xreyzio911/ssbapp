@@ -14,7 +14,7 @@ export default async function EmployeeDocumentsPage() {
     }),
     prisma.employeeDocStatus.findMany({
       where: { userId: user.id },
-      select: { docType: true, needsUpdate: true },
+      select: { docType: true, needsUpdate: true, updateNote: true },
     }),
   ]);
 
@@ -26,6 +26,7 @@ export default async function EmployeeDocumentsPage() {
   const safeStatuses = statuses.map((status) => ({
     docType: status.docType,
     needsUpdate: status.needsUpdate,
+    updateNote: status.updateNote,
   }));
 
   return <EmployeeDocumentsSection versions={safeVersions} statuses={safeStatuses} />;

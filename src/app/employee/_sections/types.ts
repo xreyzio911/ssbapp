@@ -20,6 +20,7 @@ export type EmployeeDocVersion = {
 export type EmployeeDocStatus = {
   docType: string;
   needsUpdate: boolean;
+  updateNote: string | null;
 };
 
 export type EmployeeHrAssignment = {

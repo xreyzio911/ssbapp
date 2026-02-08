@@ -14,7 +14,7 @@ export default async function EmployeeDashboardPage() {
     }),
     prisma.employeeDocStatus.findMany({
       where: { userId: user.id },
-      select: { docType: true, needsUpdate: true },
+      select: { docType: true, needsUpdate: true, updateNote: true },
     }),
     prisma.hrFileAssignment.findMany({
       where: { employeeId: user.id },
@@ -43,6 +43,7 @@ export default async function EmployeeDashboardPage() {
   const safeStatuses = statuses.map((status) => ({
     docType: status.docType,
     needsUpdate: status.needsUpdate,
+    updateNote: status.updateNote,
   }));
 
   const safeAssignments = assignments.map((assignment) => ({

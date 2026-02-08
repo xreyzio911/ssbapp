@@ -29,7 +29,8 @@ export function EmployeeDocumentsSection({
       <div className="grid gap-4 md:grid-cols-2">
         {DOC_TYPES.map((doc) => {
           const latest = latestByType.get(doc.type);
-          const needsUpdate = statusByType.get(doc.type);
+          const statusInfo = statusByType.get(doc.type);
+          const needsUpdate = statusInfo?.needsUpdate;
           const status = getUploadStatus({ latest, needsUpdate });
 
           return (
@@ -39,6 +40,7 @@ export function EmployeeDocumentsSection({
               label={doc.label}
               status={status}
               lastUploaded={latest ? new Date(latest).toLocaleDateString("id-ID") : undefined}
+              updateNote={statusInfo?.updateNote}
             />
           );
         })}

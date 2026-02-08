@@ -43,10 +43,18 @@ export default async function EmployeeDetailPage({
     }),
   ]);
 
-  const statusByType = new Map<string, boolean>();
-  statuses.forEach((s: { docType: string; needsUpdate: boolean }) => {
-    statusByType.set(s.docType, s.needsUpdate);
-  });
+  const statusByType = new Map<
+    string,
+    { needsUpdate: boolean; updateNote: string | null }
+  >();
+  statuses.forEach(
+    (s: { docType: string; needsUpdate: boolean; updateNote: string | null }) => {
+      statusByType.set(s.docType, {
+        needsUpdate: s.needsUpdate,
+        updateNote: s.updateNote,
+      });
+    }
+  );
   const versionsByType = DOC_TYPES.reduce((acc, doc) => {
     acc[doc.type] = versions.filter(
       (v: { docType: string }) => v.docType === doc.type
@@ -304,7 +312,9 @@ export default async function EmployeeDetailPage({
         <div className="mt-4 space-y-4">
           {DOC_TYPES.map((doc) => {
             const docVersions = versionsByType[doc.type];
-            const needsUpdate = statusByType.get(doc.type) || false;
+            const statusInfo = statusByType.get(doc.type);
+            const needsUpdate = statusInfo?.needsUpdate || false;
+            const updateNote = statusInfo?.updateNote || null;
             const latest = docVersions[0];
             const status = latest
               ? needsUpdate
@@ -340,6 +350,7 @@ export default async function EmployeeDetailPage({
                       employeeId={employee.id}
                       docType={doc.type}
                       needsUpdate={needsUpdate}
+                      currentNote={updateNote}
                     />
                   </div>
                 </div>
@@ -367,12 +378,22 @@ export default async function EmployeeDetailPage({
                             version.createdAt
                           )} - {version.createdAt.toLocaleString("id-ID")}
                         </span>
-                        <Link
-                          className="text-[#1E453E] underline"
-                          href={`/api/hr/documents/${version.id}`}
-                        >
-                          Unduh
-                        </Link>
+                        <div className="flex items-center gap-3">
+                          <Link
+                            className="text-[#1E453E] underline"
+                            href={`/api/hr/documents/${version.id}?preview=1`}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                          >
+                            Pratinjau
+                          </Link>
+                          <Link
+                            className="text-[#1E453E] underline"
+                            href={`/api/hr/documents/${version.id}`}
+                          >
+                            Unduh
+                          </Link>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -391,7 +412,7 @@ export default async function EmployeeDetailPage({
           Riwayat Dokumen
         </h2>
         <p className="text-sm text-[#6c6f6e]">
-          Semua versi dokumen karyawan tersimpan dan dapat diunduh.
+          Semua versi dokumen karyawan tersimpan, dapat dipratinjau, dan diunduh.
         </p>
         {history.length === 0 ? (
           <EmptyState
@@ -418,12 +439,22 @@ export default async function EmployeeDetailPage({
                     Asli: {item.originalFilename}
                   </p>
                 </div>
-                <Link
-                  className="text-sm font-medium text-[#1E453E] underline"
-                  href={`/api/hr/documents/${item.id}`}
-                >
-                  Unduh
-                </Link>
+                <div className="flex items-center gap-4">
+                  <Link
+                    className="text-sm font-medium text-[#1E453E] underline"
+                    href={`/api/hr/documents/${item.id}?preview=1`}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                  >
+                    Pratinjau
+                  </Link>
+                  <Link
+                    className="text-sm font-medium text-[#1E453E] underline"
+                    href={`/api/hr/documents/${item.id}`}
+                  >
+                    Unduh
+                  </Link>
+                </div>
               </div>
             ))}
           </div>

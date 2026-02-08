@@ -8,10 +8,11 @@ import { buildEmployeeStoredFilename } from "@/lib/filename";
 import path from "path";
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   context: { params: Promise<{ versionId: string }> }
 ) {
   const { versionId } = await context.params;
+  const preview = req.nextUrl.searchParams.get("preview") === "1";
   const user = await getSessionUser();
   if (!user || user.role !== UserRole.HR) {
     return NextResponse.json({ error: "Tidak diizinkan." }, { status: 401 });
@@ -37,14 +38,16 @@ export async function GET(
   await logAudit({
     actorId: user.id,
     actorRole: user.role,
-    action: "DOWNLOAD_EMPLOYEE_DOC",
+    action: preview ? "PREVIEW_EMPLOYEE_DOC" : "DOWNLOAD_EMPLOYEE_DOC",
     targetType: "DocumentVersion",
     targetId: version.id,
   });
   return new Response(buffer, {
     headers: {
       "Content-Type": version.mimeType,
-      "Content-Disposition": `attachment; filename="${downloadName}"`,
+      "Content-Disposition": preview
+        ? `inline; filename="${downloadName}"`
+        : `attachment; filename="${downloadName}"`,
     },
   });
 }

@@ -33,7 +33,8 @@ export function EmployeeOverviewSection({
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           {DOC_TYPES.map((doc) => {
             const latest = latestByType.get(doc.type);
-            const needsUpdate = statusByType.get(doc.type);
+            const statusInfo = statusByType.get(doc.type);
+            const needsUpdate = statusInfo?.needsUpdate;
             const status = getUploadStatus({ latest, needsUpdate });
             const tone =
               status === "Sudah diunggah"
@@ -54,6 +55,11 @@ export function EmployeeOverviewSection({
                       ? `Terakhir: ${new Date(latest).toLocaleDateString("id-ID")}`
                       : "Belum ada file"}
                   </p>
+                  {statusInfo?.needsUpdate && statusInfo.updateNote ? (
+                    <p className="mt-1 text-xs text-[#7c4a00]">
+                      Catatan HR: {statusInfo.updateNote}
+                    </p>
+                  ) : null}
                 </div>
                 <Badge tone={tone}>{status}</Badge>
               </div>

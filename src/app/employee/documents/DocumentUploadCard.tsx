@@ -11,6 +11,7 @@ type Props = {
   label: string;
   status: string;
   lastUploaded?: string;
+  updateNote?: string | null;
 };
 
 type NoticeTone = "success" | "error" | "info";
@@ -30,6 +31,7 @@ export function DocumentUploadCard({
   label,
   status,
   lastUploaded,
+  updateNote,
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<{ tone: NoticeTone; message: string } | null>(null);
@@ -179,6 +181,14 @@ export function DocumentUploadCard({
           Unggah / Ganti
         </Button>
       </div>
+
+      {status === "Perlu pembaruan" && updateNote ? (
+        <InlineNotice
+          className="mt-3"
+          tone="info"
+          message={`Catatan HR: ${updateNote}`}
+        />
+      ) : null}
 
       {notice ? (
         <InlineNotice

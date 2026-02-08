@@ -113,8 +113,8 @@ export async function POST(req: Request) {
 
   await prisma.employeeDocStatus.upsert({
     where: { userId_docType: { userId: user.id, docType } },
-    create: { userId: user.id, docType, needsUpdate: false },
-    update: { needsUpdate: false },
+    create: { userId: user.id, docType, needsUpdate: false, updateNote: null },
+    update: { needsUpdate: false, updateNote: null },
   });
 
   await logAudit({

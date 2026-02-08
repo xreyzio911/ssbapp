@@ -11,9 +11,15 @@ export function buildLatestByType(versions: EmployeeDocVersion[]) {
 }
 
 export function buildNeedsUpdateByType(statuses: EmployeeDocStatus[]) {
-  const statusByType = new Map<string, boolean>();
+  const statusByType = new Map<
+    string,
+    { needsUpdate: boolean; updateNote: string | null }
+  >();
   statuses.forEach((status) => {
-    statusByType.set(status.docType, status.needsUpdate);
+    statusByType.set(status.docType, {
+      needsUpdate: status.needsUpdate,
+      updateNote: status.updateNote,
+    });
   });
   return statusByType;
 }
