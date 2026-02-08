@@ -31,6 +31,57 @@ function hasS3EnvConfig() {
   return Boolean(region && bucket);
 }
 
+function isS3NotFoundError(error: unknown) {
+  const maybeAwsError = error as { name?: string; $metadata?: { httpStatusCode?: number } };
+  return (
+    maybeAwsError?.name === "NoSuchKey" ||
+    maybeAwsError?.$metadata?.httpStatusCode === 404
+  );
+}
+
+function buildS3ReadKeyCandidates(relativePath: string) {
+  const normalized = relativePath.replace(/\\/g, "/");
+  const keys = new Set<string>();
+
+  const add = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return;
+    }
+    keys.add(trimmed);
+    keys.add(trimmed.replace(/^\/+/, ""));
+  };
+
+  add(normalized);
+  add(normalized.replace(/^[A-Za-z]:/, ""));
+
+  const localPrefixes = [
+    "/tmp/storage/",
+    "tmp/storage/",
+    "/var/task/storage/",
+    "var/task/storage/",
+    "/storage/",
+    "storage/",
+  ];
+
+  for (const prefix of localPrefixes) {
+    const idx = normalized.indexOf(prefix);
+    if (idx >= 0) {
+      add(normalized.slice(idx + prefix.length));
+    }
+  }
+
+  const storageFolders = ["employee/", "hr/", "signatures/"];
+  for (const folder of storageFolders) {
+    const idx = normalized.indexOf(folder);
+    if (idx >= 0) {
+      add(normalized.slice(idx));
+    }
+  }
+
+  return Array.from(keys);
+}
+
 function isServerlessRuntime() {
   const execEnv = process.env.AWS_EXECUTION_ENV || "";
   return Boolean(
@@ -54,17 +105,26 @@ export function getStorageRoot() {
 
 export function getStorageDriver() {
   const configuredDriver = getEnvValue("STORAGE_DRIVER").toLowerCase();
+  if (configuredDriver === "local") {
+    if (process.env.NODE_ENV === "test") {
+      return "local";
+    }
+    throw new Error(
+      "Konfigurasi tidak valid: STORAGE_DRIVER=local tidak diizinkan. Gunakan STORAGE_DRIVER=s3."
+    );
+  }
   if (configuredDriver === "s3") {
     return "s3";
   }
-  if (configuredDriver === "local") {
-    if (isServerlessRuntime() && hasS3EnvConfig()) {
-      // On serverless, prefer durable storage when config is available.
-      return "s3";
-    }
+  if (hasS3EnvConfig()) {
+    return "s3";
+  }
+  if (process.env.NODE_ENV === "test") {
     return "local";
   }
-  return hasS3EnvConfig() ? "s3" : "local";
+  throw new Error(
+    "Konfigurasi storage belum lengkap. Wajib gunakan S3 (set STORAGE_DRIVER=s3 dan env S3)."
+  );
 }
 
 export function getS3Client() {
@@ -126,13 +186,28 @@ export async function saveFile(relativePath: string, buffer: Buffer) {
 export async function readFileBuffer(relativePath: string) {
   if (getStorageDriver() === "s3") {
     const client = getS3Client();
-    try {
+    const bucket = getS3Bucket();
+    const keyCandidates = buildS3ReadKeyCandidates(relativePath);
+    let lastNotFoundError: unknown = null;
+
+    for (const key of keyCandidates) {
       const result = await client.send(
         new GetObjectCommand({
-          Bucket: getS3Bucket(),
-          Key: relativePath.replace(/\\/g, "/"),
+          Bucket: bucket,
+          Key: key,
         })
-      );
+      ).catch((error: unknown) => {
+        if (isS3NotFoundError(error)) {
+          lastNotFoundError = error;
+          return null;
+        }
+        throw error;
+      });
+
+      if (!result) {
+        continue;
+      }
+
       const body = result.Body;
       if (!body || typeof body === "string") {
         throw new Error("Gagal membaca file dari S3.");
@@ -142,18 +217,15 @@ export async function readFileBuffer(relativePath: string) {
         chunks.push(Buffer.from(chunk));
       }
       return Buffer.concat(chunks);
-    } catch (error: unknown) {
-      const maybeAwsError = error as { name?: string; $metadata?: { httpStatusCode?: number } };
-      if (
-        maybeAwsError?.name === "NoSuchKey" ||
-        maybeAwsError?.$metadata?.httpStatusCode === 404
-      ) {
-        const notFound = new Error("FILE_NOT_FOUND");
-        (notFound as Error & { code?: string }).code = "ENOENT";
-        throw notFound;
-      }
-      throw error;
     }
+
+    if (lastNotFoundError) {
+      const notFound = new Error("FILE_NOT_FOUND");
+      (notFound as Error & { code?: string }).code = "ENOENT";
+      throw notFound;
+    }
+
+    throw new Error("Gagal membaca file dari S3.");
   }
 
   const fullPath = path.join(getStorageRoot(), relativePath);

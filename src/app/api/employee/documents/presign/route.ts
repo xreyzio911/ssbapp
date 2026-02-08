@@ -27,8 +27,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Tidak diizinkan." }, { status: 401 });
   }
 
-  if (getStorageDriver() !== "s3") {
-    return NextResponse.json({ error: "STORAGE_NOT_S3" }, { status: 409 });
+  try {
+    if (getStorageDriver() !== "s3") {
+      return NextResponse.json(
+        { error: "Konfigurasi storage tidak valid. Wajib gunakan S3." },
+        { status: 500 }
+      );
+    }
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error && error.message
+        ? error.message
+        : "Konfigurasi storage tidak valid.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 
   let body: PresignBody;

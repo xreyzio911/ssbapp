@@ -272,14 +272,21 @@ export function BatchUploadForm({ employees }: { employees: Employee[] }) {
         method: "POST",
         body: formData,
       });
-      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        warning?: string;
+      };
 
       if (!res.ok) {
         showError(data.error || "Gagal mengunggah.");
         return;
       }
 
-      showSuccess("File berhasil diunggah dan dikirim.");
+      if (data.warning) {
+        setNotice({ tone: "info", message: data.warning });
+      } else {
+        showSuccess("File berhasil diunggah dan dikirim.");
+      }
       setSelected([]);
       setTitle("");
       setSharedFile(null);

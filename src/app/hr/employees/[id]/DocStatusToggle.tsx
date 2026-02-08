@@ -55,11 +55,11 @@ export function DocStatusToggle({
           <textarea
             id={noteInputId}
             name="note"
-            rows={2}
+            rows={4}
             required
             maxLength={500}
             placeholder="Contoh: Mohon unggah ulang KTP dengan foto tidak buram."
-            className="w-full rounded-xl border border-[#1E453E]/15 bg-white px-3 py-1.5 text-xs leading-5 text-[#1B1B1B] shadow-sm transition placeholder:text-xs placeholder:text-[#7a7a7a] focus:border-[#1E453E] focus:outline-none focus:ring-2 focus:ring-[#1E453E]/20"
+            className="w-full min-h-28 rounded-xl border border-[#1E453E]/15 bg-white px-4 py-3 text-sm leading-5 text-[#1B1B1B] shadow-sm transition placeholder:text-sm placeholder:text-[#7a7a7a] focus:border-[#1E453E] focus:outline-none focus:ring-2 focus:ring-[#1E453E]/20"
             aria-describedby={`${noteInputId}-hint`}
           />
           <p id={`${noteInputId}-hint`} className="text-[11px] leading-4 text-[#6c6f6e]">

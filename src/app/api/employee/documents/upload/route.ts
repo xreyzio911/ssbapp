@@ -45,7 +45,12 @@ export async function POST(req: Request) {
       error instanceof Error && error.message
         ? error.message
         : "Gagal menyimpan dokumen.";
-    if (message.includes("S3 env belum lengkap") || message.includes("S3_BUCKET belum diset")) {
+    if (
+      message.includes("S3 env belum lengkap") ||
+      message.includes("S3_BUCKET belum diset") ||
+      message.includes("Konfigurasi storage belum lengkap") ||
+      message.includes("STORAGE_DRIVER=local tidak diizinkan")
+    ) {
       return NextResponse.json({ error: "Konfigurasi penyimpanan S3 belum lengkap." }, { status: 500 });
     }
     return NextResponse.json({ error: "Gagal menyimpan dokumen." }, { status: 500 });

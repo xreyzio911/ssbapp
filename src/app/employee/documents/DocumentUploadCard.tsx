@@ -17,7 +17,6 @@ type Props = {
 type NoticeTone = "success" | "error" | "info";
 
 const MAX_SIZE = 10 * 1024 * 1024;
-const FALLBACK_ERROR = "STORAGE_NOT_S3";
 
 function getErrorMessage(error: unknown, fallback = "Gagal mengunggah.") {
   if (error instanceof Error && error.message) {
@@ -38,22 +37,6 @@ export function DocumentUploadCard({
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const inputId = `upload-${docType.toLowerCase()}`;
-
-  async function uploadLocal(fileToUpload: File) {
-    const formData = new FormData();
-    formData.append("docType", docType);
-    formData.append("file", fileToUpload);
-
-    const res = await fetch("/api/employee/documents/upload", {
-      method: "POST",
-      body: formData,
-    });
-
-    if (!res.ok) {
-      const data = (await res.json().catch(() => ({}))) as { error?: string };
-      throw new Error(data.error || "Gagal mengunggah.");
-    }
-  }
 
   async function onUpload(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -82,48 +65,37 @@ export function DocumentUploadCard({
         }),
       });
 
-      if (presignRes.ok) {
-        const presign = (await presignRes.json()) as {
-          uploadUrl: string;
-          uploadToken: string;
-        };
-
-        try {
-          const uploadRes = await fetch(presign.uploadUrl, {
-            method: "PUT",
-            headers: { "Content-Type": file.type },
-            body: file,
-          });
-
-          if (!uploadRes.ok) {
-            throw new Error("Gagal mengunggah ke penyimpanan.");
-          }
-
-          const completeRes = await fetch("/api/employee/documents/complete", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ uploadToken: presign.uploadToken }),
-          });
-
-          if (!completeRes.ok) {
-            const data = (await completeRes.json().catch(() => ({}))) as {
-              error?: string;
-            };
-            throw new Error(data.error || "Gagal menyimpan dokumen.");
-          }
-        } catch {
-          await uploadLocal(file);
-        }
-      } else {
+      if (!presignRes.ok) {
         const presignError = (await presignRes.json().catch(() => ({}))) as {
           error?: string;
         };
+        throw new Error(presignError.error || "Gagal menyiapkan unggahan.");
+      }
 
-        if (presignError.error !== FALLBACK_ERROR) {
-          throw new Error(presignError.error || "Gagal menyiapkan unggahan.");
-        }
+      const presign = (await presignRes.json()) as {
+        uploadUrl: string;
+        uploadToken: string;
+      };
 
-        await uploadLocal(file);
+      const uploadRes = await fetch(presign.uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      if (!uploadRes.ok) {
+        throw new Error("Gagal mengunggah ke penyimpanan.");
+      }
+
+      const completeRes = await fetch("/api/employee/documents/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uploadToken: presign.uploadToken }),
+      });
+      if (!completeRes.ok) {
+        const data = (await completeRes.json().catch(() => ({}))) as {
+          error?: string;
+        };
+        throw new Error(data.error || "Gagal menyimpan dokumen.");
       }
 
       setNotice({ tone: "success", message: "Dokumen berhasil diunggah." });

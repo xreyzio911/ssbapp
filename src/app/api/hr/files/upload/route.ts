@@ -29,6 +29,8 @@ type SpecificAssignment = {
   title?: string;
 };
 
+type EmailResult = "SENT" | "SKIPPED_NO_EMAIL" | "FAILED_SMTP" | "FAILED_OTHER";
+
 function stripExtension(name: string) {
   return name.replace(/\.[^/.]+$/, "");
 }
@@ -54,7 +56,103 @@ function getStorageUploadErrorMessage(error: unknown) {
   if (message.includes("S3 env belum lengkap") || message.includes("S3_BUCKET belum diset")) {
     return "Konfigurasi penyimpanan S3 belum lengkap.";
   }
+  if (
+    message.includes("Konfigurasi storage belum lengkap") ||
+    message.includes("STORAGE_DRIVER=local tidak diizinkan")
+  ) {
+    return "Konfigurasi penyimpanan S3 belum lengkap.";
+  }
   return "Gagal menyimpan file ke penyimpanan.";
+}
+
+function buildNotificationHtml({
+  employeeName,
+  title,
+  loginUrl,
+}: {
+  employeeName: string;
+  title: string;
+  loginUrl: string;
+}) {
+  return `
+    <div style="font-family: Arial, sans-serif; color: #1E453E; line-height: 1.6;">
+      <p>Halo ${employeeName},</p>
+      <p>Anda menerima dokumen baru dari HR:</p>
+      <p><strong>${title}</strong></p>
+      <p>Silakan masuk ke portal untuk melihat dan mengunduh dokumen.</p>
+      <p>
+        <a href="${loginUrl}" style="display: inline-block; padding: 10px 18px; border-radius: 999px; background: #1E453E; color: #ffffff; text-decoration: none; font-weight: 600;">
+          Masuk ke Portal
+        </a>
+      </p>
+      <p style="font-size: 12px; color: #6c6f6e;">
+        Jika tombol tidak berfungsi, buka tautan berikut:
+        <a href="${loginUrl}" style="color: #1E453E;">${loginUrl}</a>
+      </p>
+      <p style="font-size: 12px; color: #6c6f6e;">
+        Jika Anda tidak merasa menerima dokumen ini, Anda dapat mengabaikan email ini.
+      </p>
+    </div>
+  `;
+}
+
+async function trySendNotificationEmail({
+  email,
+  employeeName,
+  title,
+  loginUrl,
+}: {
+  email: string | null;
+  employeeName: string;
+  title: string;
+  loginUrl: string;
+}): Promise<EmailResult> {
+  if (!email) {
+    return "SKIPPED_NO_EMAIL";
+  }
+
+  try {
+    await sendEmail({
+      to: email,
+      subject: "Dokumen baru dari HR",
+      html: buildNotificationHtml({ employeeName, title, loginUrl }),
+    });
+    return "SENT";
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error && error.message ? error.message : "";
+    if (message.includes("SMTP belum dikonfigurasi")) {
+      return "FAILED_SMTP";
+    }
+    return "FAILED_OTHER";
+  }
+}
+
+function buildEmailWarning({
+  failedSmtp,
+  failedOther,
+  skippedNoEmail,
+}: {
+  failedSmtp: number;
+  failedOther: number;
+  skippedNoEmail: number;
+}) {
+  const parts: string[] = [];
+  if (failedSmtp > 0 && failedOther === 0) {
+    parts.push(
+      "Dokumen berhasil disimpan, tetapi notifikasi email tidak dikirim karena SMTP belum dikonfigurasi."
+    );
+  } else if (failedSmtp + failedOther > 0) {
+    parts.push(
+      `Dokumen berhasil disimpan, tetapi ${failedSmtp + failedOther} notifikasi email gagal dikirim.`
+    );
+  }
+  if (skippedNoEmail > 0) {
+    parts.push(
+      `${skippedNoEmail} karyawan tidak memiliki email, notifikasi dilewati.`
+    );
+  }
+  return parts.join(" ");
 }
 
 export async function POST(req: Request) {
@@ -153,11 +251,11 @@ export async function POST(req: Request) {
       },
     });
 
+    let emailFailedSmtp = 0;
+    let emailFailedOther = 0;
+    let emailSkippedNoEmail = 0;
+
     for (const employee of employees) {
-      const email = employee.email;
-      if (!email) {
-        continue;
-      }
       const password = generateToken(12);
       const kdfPayload = encryptFileKeyWithPassword(fileKey, password);
       const passwordHash = await hashPassword(password);
@@ -174,30 +272,19 @@ export async function POST(req: Request) {
         },
       });
 
-      await sendEmail({
-        to: email,
-        subject: "Dokumen baru dari HR",
-        html: `
-          <div style="font-family: Arial, sans-serif; color: #1E453E; line-height: 1.6;">
-            <p>Halo ${employee.name},</p>
-            <p>Anda menerima dokumen baru dari HR:</p>
-            <p><strong>${title}</strong></p>
-            <p>Silakan masuk ke portal untuk melihat dan mengunduh dokumen.</p>
-            <p>
-              <a href="${loginUrl}" style="display: inline-block; padding: 10px 18px; border-radius: 999px; background: #1E453E; color: #ffffff; text-decoration: none; font-weight: 600;">
-                Masuk ke Portal
-              </a>
-            </p>
-            <p style="font-size: 12px; color: #6c6f6e;">
-              Jika tombol tidak berfungsi, buka tautan berikut:
-              <a href="${loginUrl}" style="color: #1E453E;">${loginUrl}</a>
-            </p>
-            <p style="font-size: 12px; color: #6c6f6e;">
-              Jika Anda tidak merasa menerima dokumen ini, Anda dapat mengabaikan email ini.
-            </p>
-          </div>
-        `,
+      const emailResult = await trySendNotificationEmail({
+        email: employee.email,
+        employeeName: employee.name,
+        title,
+        loginUrl,
       });
+      if (emailResult === "FAILED_SMTP") {
+        emailFailedSmtp += 1;
+      } else if (emailResult === "FAILED_OTHER") {
+        emailFailedOther += 1;
+      } else if (emailResult === "SKIPPED_NO_EMAIL") {
+        emailSkippedNoEmail += 1;
+      }
     }
 
     await logAudit({
@@ -206,10 +293,22 @@ export async function POST(req: Request) {
       action: "UPLOAD_HR_FILE",
       targetType: "HrFile",
       targetId: hrFileId,
-      metadata: { fileType, employees: employees.length, mode: "SHARED" },
+      metadata: {
+        fileType,
+        employees: employees.length,
+        mode: "SHARED",
+        emailFailedSmtp,
+        emailFailedOther,
+        emailSkippedNoEmail,
+      },
     });
 
-    return NextResponse.json({ ok: true });
+    const warning = buildEmailWarning({
+      failedSmtp: emailFailedSmtp,
+      failedOther: emailFailedOther,
+      skippedNoEmail: emailSkippedNoEmail,
+    });
+    return NextResponse.json({ ok: true, warning: warning || undefined });
   }
 
   const assignmentsRaw = String(formData.get("assignments") || "[]");
@@ -303,6 +402,10 @@ export async function POST(req: Request) {
     }
   );
 
+  let emailFailedSmtp = 0;
+  let emailFailedOther = 0;
+  let emailSkippedNoEmail = 0;
+
   for (let index = 0; index < files.length; index += 1) {
     const file = files[index];
     if (!(file instanceof File)) {
@@ -372,8 +475,6 @@ export async function POST(req: Request) {
       },
     });
 
-    const email = employee.email;
-
     const password = generateToken(12);
     const kdfPayload = encryptFileKeyWithPassword(fileKey, password);
     const passwordHash = await hashPassword(password);
@@ -390,31 +491,18 @@ export async function POST(req: Request) {
       },
     });
 
-    if (email) {
-      await sendEmail({
-        to: email,
-        subject: "Dokumen baru dari HR",
-        html: `
-          <div style="font-family: Arial, sans-serif; color: #1E453E; line-height: 1.6;">
-            <p>Halo ${employee.name},</p>
-            <p>Anda menerima dokumen baru dari HR:</p>
-            <p><strong>${finalTitle}</strong></p>
-            <p>Silakan masuk ke portal untuk melihat dan mengunduh dokumen.</p>
-            <p>
-              <a href="${loginUrl}" style="display: inline-block; padding: 10px 18px; border-radius: 999px; background: #1E453E; color: #ffffff; text-decoration: none; font-weight: 600;">
-                Masuk ke Portal
-              </a>
-            </p>
-            <p style="font-size: 12px; color: #6c6f6e;">
-              Jika tombol tidak berfungsi, buka tautan berikut:
-              <a href="${loginUrl}" style="color: #1E453E;">${loginUrl}</a>
-            </p>
-            <p style="font-size: 12px; color: #6c6f6e;">
-              Jika Anda tidak merasa menerima dokumen ini, Anda dapat mengabaikan email ini.
-            </p>
-          </div>
-        `,
-      });
+    const emailResult = await trySendNotificationEmail({
+      email: employee.email,
+      employeeName: employee.name,
+      title: finalTitle,
+      loginUrl,
+    });
+    if (emailResult === "FAILED_SMTP") {
+      emailFailedSmtp += 1;
+    } else if (emailResult === "FAILED_OTHER") {
+      emailFailedOther += 1;
+    } else if (emailResult === "SKIPPED_NO_EMAIL") {
+      emailSkippedNoEmail += 1;
     }
 
     await logAudit({
@@ -423,9 +511,21 @@ export async function POST(req: Request) {
       action: "UPLOAD_HR_FILE",
       targetType: "HrFile",
       targetId: hrFileId,
-      metadata: { fileType, employees: 1, mode: "SPECIFIC" },
+      metadata: {
+        fileType,
+        employees: 1,
+        mode: "SPECIFIC",
+        emailFailedSmtp: emailResult === "FAILED_SMTP" ? 1 : 0,
+        emailFailedOther: emailResult === "FAILED_OTHER" ? 1 : 0,
+        emailSkippedNoEmail: emailResult === "SKIPPED_NO_EMAIL" ? 1 : 0,
+      },
     });
   }
 
-  return NextResponse.json({ ok: true });
+  const warning = buildEmailWarning({
+    failedSmtp: emailFailedSmtp,
+    failedOther: emailFailedOther,
+    skippedNoEmail: emailSkippedNoEmail,
+  });
+  return NextResponse.json({ ok: true, warning: warning || undefined });
 }

@@ -379,20 +379,20 @@ export default async function EmployeeDetailPage({
                           )} - {version.createdAt.toLocaleString("id-ID")}
                         </span>
                         <div className="flex items-center gap-3">
-                          <Link
+                          <a
                             className="text-[#1E453E] underline"
                             href={`/api/hr/documents/${version.id}?preview=1`}
                             target="_blank"
                             rel="noreferrer noopener"
                           >
                             Pratinjau
-                          </Link>
-                          <Link
+                          </a>
+                          <a
                             className="text-[#1E453E] underline"
                             href={`/api/hr/documents/${version.id}`}
                           >
                             Unduh
-                          </Link>
+                          </a>
                         </div>
                       </div>
                     ))}
@@ -440,20 +440,20 @@ export default async function EmployeeDetailPage({
                   </p>
                 </div>
                 <div className="flex items-center gap-4">
-                  <Link
+                  <a
                     className="text-sm font-medium text-[#1E453E] underline"
                     href={`/api/hr/documents/${item.id}?preview=1`}
                     target="_blank"
                     rel="noreferrer noopener"
                   >
                     Pratinjau
-                  </Link>
-                  <Link
+                  </a>
+                  <a
                     className="text-sm font-medium text-[#1E453E] underline"
                     href={`/api/hr/documents/${item.id}`}
                   >
                     Unduh
-                  </Link>
+                  </a>
                 </div>
               </div>
             ))}
@@ -510,19 +510,19 @@ export default async function EmployeeDetailPage({
                   </Badge>
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
-                  <Link
+                  <a
                     className="text-[#1E453E] underline"
                     href={`/api/hr/assignments/${assignment.id}`}
                   >
                     Unduh file
-                  </Link>
+                  </a>
                   {assignment.signedFilePath ? (
-                    <Link
+                    <a
                       className="text-[#1E453E] underline"
                       href={`/api/hr/assignments/${assignment.id}?signed=1`}
                     >
                       Unduh file signed
-                    </Link>
+                    </a>
                   ) : null}
                 </div>
               </div>
