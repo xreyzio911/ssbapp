@@ -1,14 +1,48 @@
 import { promises as fs } from "fs";
 import path from "path";
 import { createReadStream } from "fs";
+import os from "os";
 import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 
+function hasS3EnvConfig() {
+  return Boolean(
+    process.env.S3_REGION &&
+      process.env.S3_BUCKET &&
+      process.env.S3_ACCESS_KEY_ID &&
+      process.env.S3_SECRET_ACCESS_KEY
+  );
+}
+
+function isServerlessRuntime() {
+  const execEnv = process.env.AWS_EXECUTION_ENV || "";
+  return Boolean(
+    process.env.VERCEL ||
+      process.env.AWS_LAMBDA_FUNCTION_NAME ||
+      process.env.LAMBDA_TASK_ROOT ||
+      execEnv.toLowerCase().includes("lambda")
+  );
+}
+
 export function getStorageRoot() {
-  return process.env.LOCAL_STORAGE_PATH || path.join(process.cwd(), "storage");
+  const configuredPath = process.env.LOCAL_STORAGE_PATH?.trim();
+  if (configuredPath) {
+    return configuredPath;
+  }
+  if (isServerlessRuntime()) {
+    return path.join(os.tmpdir(), "storage");
+  }
+  return path.join(process.cwd(), "storage");
 }
 
 export function getStorageDriver() {
-  return process.env.STORAGE_DRIVER === "s3" ? "s3" : "local";
+  const configuredDriver = process.env.STORAGE_DRIVER?.trim().toLowerCase();
+  if (configuredDriver === "s3") {
+    return "s3";
+  }
+  if (configuredDriver === "local") {
+    return "local";
+  }
+  return hasS3EnvConfig() ? "s3" : "local";
 }
 
 export function getS3Client() {
