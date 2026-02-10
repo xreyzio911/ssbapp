@@ -14,13 +14,13 @@ export default async function EmployeeLayout({
     <div className="min-h-screen px-4 py-6">
       <header className="sticky top-4 z-40 mx-auto flex w-full max-w-5xl flex-col gap-4 rounded-3xl border border-white/60 bg-white/70 px-6 py-5 shadow-[0_12px_40px_rgba(30,69,62,0.12)] backdrop-blur">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3">
+          <div className="flex min-w-0 items-center gap-4">
             <Image
               src="/sisabe-logo.png"
               alt="Sisabe"
-              width={40}
-              height={40}
-              className="h-10 w-10 rounded-xl border border-white/60 bg-white/70 p-1.5 shadow-[0_8px_24px_rgba(30,69,62,0.12)]"
+              width={60}
+              height={60}
+              className="h-[60px] w-[60px] rounded-2xl border border-white/60 bg-white/70 p-2 shadow-[0_8px_24px_rgba(30,69,62,0.12)]"
               priority
             />
             <div className="min-w-0">

@@ -5,13 +5,13 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen px-4 py-10">
       <div className="mx-auto w-full max-w-xl">
-        <div className="mb-6 flex items-start gap-4">
+        <div className="mb-6 flex items-start gap-5">
           <Image
             src="/sisabe-logo.png"
             alt="Sisabe"
-            width={56}
-            height={56}
-            className="h-14 w-14 rounded-2xl border border-white/60 bg-white/70 p-2 shadow-[0_8px_24px_rgba(30,69,62,0.12)]"
+            width={73}
+            height={73}
+            className="h-[73px] w-[73px] rounded-2xl border border-white/60 bg-white/70 p-[10px] shadow-[0_8px_24px_rgba(30,69,62,0.12)]"
             priority
           />
           <div>
