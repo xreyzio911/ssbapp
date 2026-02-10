@@ -1,112 +1,99 @@
-﻿# Session Summary (2026-02-08)
+# Session Summary (2026-02-09)
 
 ## Scope
-- Improved app performance path for load/upload/download, mobile experience, and hosting readiness.
-- Added employee account and profile capabilities.
-- Added HR-side filtering/sorting and bulk selection improvements.
-- Added data-model changes for `position` and `workLocation`.
-- Investigated and fixed regressions introduced during the performance work.
+- Completed enterprise UI/UX remediation for HR and Employee surfaces.
+- Migrated document update flow to include HR notes visible to employees.
+- Stabilized storage behavior to S3-first/strict in production runtime.
+- Fixed repeated deployment/runtime regressions (preview failures, SMTP warning behavior, upload fetch failures).
 
-## Major Changes Delivered
+## Major Outcomes
 
-### 1) Upload/Download Performance
-- Enforced upload size limit to `10MB` on server and client:
-  - `src/app/api/hr/files/upload/route.ts`
-  - `src/app/api/employee/documents/upload/route.ts`
-  - `src/app/hr/batch-upload/BatchUploadForm.tsx`
-  - `src/app/employee/documents/DocumentUploadCard.tsx`
-- Reduced client cost in HR file flow:
-  - `pdf-lib` is now lazy-imported only when signing.
-  - non-agreement HR files avoid unnecessary byte buffering in component state.
-  - file: `src/app/employee/hr-files/HrFileCard.tsx`
-- Implemented presigned S3 upload flow for employee document uploads:
-  - presign route: `src/app/api/employee/documents/presign/route.ts`
-  - complete route: `src/app/api/employee/documents/complete/route.ts`
-  - upload token helper: `src/lib/upload-token.ts`
-  - storage helper exports: `src/lib/storage.ts`
-  - UI integration with local fallback: `src/app/employee/documents/DocumentUploadCard.tsx`
-- Added resilience after production CORS issue:
-  - if presigned PUT fails (CORS/network), UI automatically falls back to server upload endpoint.
-  - file: `src/app/employee/documents/DocumentUploadCard.tsx`
+### 1) Navigation and UX modernization
+- Route-based nav is now the active model for HR/Employee layout using `RoleNav`.
+- Hash-tab behavior and tab-jitter flow were replaced by stable route navigation + layout stabilization.
+- Added global scrollbar stabilization to reduce layout shift across route transitions:
+  - `src/app/globals.css`
 
-### 2) Baseline Performance Workflow
-- Added repeatable measurement scripts:
-  - Lighthouse mobile report script: `scripts/perf/lighthouse.mjs`
-  - upload/download timing script: `scripts/perf/upload-download.mjs`
-  - docs: `scripts/perf/README.md`
-- Added npm scripts:
-  - `perf:lighthouse`
-  - `perf:upload`
-- Added dev dependencies:
-  - `lighthouse`
-  - `chrome-launcher`
+### 2) Shared UI and accessibility baseline
+- Hardened reusable UI primitives:
+  - `Button` loading/disabled semantics
+  - `Input` invalid state
+  - new `Select`
+  - new `InlineNotice` with proper `role`/`aria-live`
+- Applied these across HR and Employee forms/components.
 
-### 3) Employee Account & Profile
-- Added employee self-service password change in profile tab:
-  - validates current password
-  - validates new password + confirmation
-  - resets form on success
-  - files:
-    - `src/app/employee/profile/actions.ts`
-    - `src/app/employee/profile/EmployeeProfileForm.tsx`
-
-### 4) HR UX and Bulk Operations
-- Standardized employee card layout for consistent rendering with short/long names:
-  - file: `src/app/hr/EmployeeList.tsx`
-- Added HR employee list sort/filter:
-  - sort by name/jabatan/lokasi kerja
-  - filter by jabatan and lokasi kerja
-  - file: `src/app/hr/EmployeeList.tsx`
-- Enhanced batch upload employee selector:
-  - filter by jabatan
-  - filter by lokasi kerja
-  - sort controls
-  - `Pilih semua`, `Pilih hasil filter`, `Bersihkan`
-  - file: `src/app/hr/batch-upload/BatchUploadForm.tsx`
-
-### 5) Data Model and Migrations
-- Existing migration acknowledged: `0004_add_user_position`.
-- Added `workLocation` field:
+### 3) HR document update notes (new data + UX)
+- Added `updateNote` support in employee doc status:
   - schema: `prisma/schema.prisma`
-  - migration: `prisma/migrations/0005_add_work_location/migration.sql`
-- Surfaced new field in app:
-  - HR dashboard query/select: `src/app/hr/page.tsx`
-  - HR detail page: `src/app/hr/employees/[id]/page.tsx`
-  - employee profile payload/view:
-    - `src/app/employee/page.tsx`
-    - `src/app/employee/EmployeeTabsContent.tsx`
-    - `src/app/employee/profile/EmployeeProfileForm.tsx`
-  - manual employee create form/action:
-    - `src/app/hr/CreateEmployeeForm.tsx`
-    - `src/app/hr/actions.ts`
+  - migration: `prisma/migrations/0006_add_employee_doc_update_note/migration.sql`
+- HR can now submit note when requesting update; employee sees note in their document views.
+- Notes are cleared after successful employee re-upload/complete.
+- Key files:
+  - `src/app/hr/employees/[id]/actions.ts`
+  - `src/app/hr/employees/[id]/DocStatusToggle.tsx`
+  - `src/app/employee/documents/DocumentUploadCard.tsx`
+  - `src/app/employee/_sections/document-status.ts`
+  - `src/app/employee/_sections/EmployeeDocumentsSection.tsx`
+  - `src/app/employee/_sections/EmployeeOverviewSection.tsx`
 
-## Session-Level Operational Outputs
-- Provided full SQL inserts for bulk employee creation with:
-  - simplified username format
-  - duplicate handling (`...2`)
-  - shared generic password hash
-  - corrected quoted column names
-  - explicit `id` and timestamps for DBs without defaults (`gen_random_uuid()`, `now()`).
-- Provided ordered username list (vertical) for spreadsheet paste.
-- Provided SQL `UPDATE` list to assign `workLocation` by username in the same order as provided.
+### 4) HR preview/download flow improvements
+- Added/updated HR preview support in document API (`?preview=1`, audit action split):
+  - `src/app/api/hr/documents/[versionId]/route.ts`
+- Added in-page preview experience for HR employee detail (similar to employee-side UX):
+  - new component: `src/app/hr/employees/[id]/DocumentVersionList.tsx`
+  - integrated in: `src/app/hr/employees/[id]/page.tsx`
+- Added safer binary response handling for Next.js type/runtime compatibility (`ArrayBuffer` body).
 
-## Production Incident and Root Cause
-- Symptom: employee upload showed `Failed to fetch`.
-- Root cause: browser CORS failure on S3 presigned `PUT` request (missing `Access-Control-Allow-Origin` on preflight response).
-- Immediate mitigation in code: automatic fallback to server upload endpoint.
-- Recommended permanent infra fix: set S3 bucket CORS to allow app origins and `PUT/GET/HEAD`.
+### 5) Storage/S3 hardening and serverless compatibility
+- Reworked storage env parsing and detection to be robust with quoted env and AWS alias env keys:
+  - `S3_*` and `AWS_*` compatibility in `src/lib/storage.ts`
+- Enforced S3-first runtime behavior and blocked accidental local persistence behavior in non-test runtime.
+- Added serverless/local legacy-key read fallback mapping (`/tmp/storage/...`, `/var/task/storage/...`) so historical paths can still resolve in S3 when possible.
+- Added graceful `FILE_NOT_FOUND` handling paths for preview/download endpoints to avoid unhandled 500s.
+- Key files:
+  - `src/lib/storage.ts`
+  - `src/app/api/hr/documents/[versionId]/route.ts`
+  - `src/app/api/hr/assignments/[assignmentId]/route.ts`
+  - `src/app/api/employee/hr-files/[assignmentId]/blob/route.ts`
+  - `src/app/api/employee/signature/route.ts`
 
-## Validation Performed
-- Repeatedly ran:
-  - `npm test`
-  - `npm run db:generate` (when schema changed)
-- Typecheck stayed green after final changes.
+### 6) HR upload behavior with SMTP exceptions
+- HR upload no longer fails end-to-end just because SMTP is not configured.
+- File save + assignment creation remains success; email failures are returned as warning info.
+- Shared mode now always creates assignments even for employees without email (email is optional).
+- Key files:
+  - `src/app/api/hr/files/upload/route.ts`
+  - `src/app/hr/batch-upload/BatchUploadForm.tsx`
 
-## Remaining Planned Work (Not Yet Implemented)
-- Complete baseline metrics capture run and store artifacts for current production.
-- Additional initial-load optimization and bundle reduction.
-- API/query/index tuning for p95 response improvements.
-- Optional CloudFront rollout and download path tuning at scale.
-- Infra plan finalization against real traffic/cost measurements.
+### 7) Employee upload reliability
+- Employee upload now uses dual path:
+  - Primary: presigned S3 upload (`presign -> PUT -> complete`)
+  - Fallback: server upload endpoint (still S3-backed) when browser-side PUT fails due CORS/network
+- Better user-facing error copy for raw `Failed to fetch` cases.
+- Key file:
+  - `src/app/employee/documents/DocumentUploadCard.tsx`
 
+### 8) HR employee detail layout cleanup
+- Refined `Dokumen Pribadi` row structure and note input sizing/padding to improve visual alignment and readability.
+- Key files:
+  - `src/app/hr/employees/[id]/page.tsx`
+  - `src/app/hr/employees/[id]/DocStatusToggle.tsx`
 
+## Validation Runs (final)
+- `npm run lint` passed.
+- `npm test` passed.
+- `npm run build` passed.
+
+## Deployment Notes
+- S3 env must be present in deployment environment:
+  - `STORAGE_DRIVER=s3`
+  - `S3_BUCKET`
+  - `S3_REGION` (or `AWS_REGION`)
+  - `S3_ACCESS_KEY_ID` (or `AWS_ACCESS_KEY_ID`)
+  - `S3_SECRET_ACCESS_KEY` (or `AWS_SECRET_ACCESS_KEY`)
+  - optional `S3_ENDPOINT`, `S3_FORCE_PATH_STYLE`
+- Legacy files previously stored only in ephemeral local storage may still need re-upload if object does not exist in S3.
+
+## Open Risk / Follow-up
+- If preview/download still fails for specific legacy records, those objects are missing in S3 and must be re-uploaded.
+- If browser direct PUT to presigned URL is blocked by CORS in some environments, fallback path is active, but S3 CORS should still be configured correctly for best throughput.
